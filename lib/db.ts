@@ -1,11 +1,8 @@
 import mongoose from "mongoose";
 import { MongoClient } from "mongodb";
 
-// Ensure we have a MongoDB URI configured
-const MONGODB_URI = process.env.MONGODB_URI;
-if (!MONGODB_URI) {
-  throw new Error("Missing MONGODB_URI environment variable");
-}
+// Resolve MongoDB URI with a safe fallback for local development to avoid import-time errors
+const MONGODB_URI = process.env.MONGODB_URI ?? "mongodb://localhost:27017/nextauth";
 
 // Mongoose connection with global caching to avoid creating multiple connections in dev/hot-reload
 interface MongooseCache {
