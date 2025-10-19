@@ -1,33 +1,32 @@
-import { Schema, Model, models, model, Types } from "mongoose";
+import { Schema, Model, models, model } from "mongoose";
 
-export type TaskPriority = "low" | "medium" | "high";
+export type TaskStatus = "todo" | "in_progress" | "done";
 
 export interface ITask {
-  userId: Types.ObjectId;
+  userId: string;
   title: string;
   description?: string;
-  completed: boolean;
-  dueDate?: Date;
-  priority: TaskPriority;
+  status: TaskStatus;
+  priority: number; // 1 (lowest) .. 5 (highest)
   createdAt: Date;
   updatedAt: Date;
 }
 
 const TaskSchema = new Schema<ITask>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-    title: { type: String, required: true },
+    userId: { type: String, required: true, index: true },
+    title: { type: String, required: true, trim: true },
     description: { type: String },
-    completed: { type: Boolean, default: false },
-    dueDate: { type: Date },
-    priority: { type: String, enum: ["low", "medium", "high"], default: "medium" },
+    status: { type: String, enum: ["todo", "in_progress", "done"], default: "todo", index: true },
+    priority: { type: Number, min: 1, max: 5, default: 3, index: true },
   },
   { timestamps: true }
 );
 
-// Compound indexes to support common query patterns
-TaskSchema.index({ userId: 1, completed: 1, dueDate: 1 });
-TaskSchema.index({ userId: 1, priority: 1 });
+// Useful indexes to support common query patterns
+TaskSchema.index({ userId: 1, status: 1 });
+TaskSchema.index({ userId: 1, priority: -1, createdAt: -1 });
+TaskSchema.index({ userId: 1, title: 1 });
 
 const Task = (models.Task as Model<ITask>) || model<ITask>("Task", TaskSchema);
 
