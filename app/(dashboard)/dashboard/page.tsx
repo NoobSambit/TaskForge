@@ -1,8 +1,13 @@
+import TaskList from "@/components/tasks/TaskList";
+
 export default function DashboardPage() {
   return (
-    <section>
-      <h1 className="mb-4 text-2xl font-semibold tracking-tight">Tasks</h1>
-      <p className="text-muted-foreground">Your task list will appear here.</p>
+    <section className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Tasks</h1>
+        <p className="text-sm text-muted-foreground">Manage your tasks below.</p>
+      </div>
+      <TaskList />
     </section>
   );
 }
