@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import TaskCard, { type Task } from "./TaskCard";
+import TaskCard from "./TaskCard";
+import type { Task } from "@/types";
 
 export default function TaskList() {
   const [tasks, setTasks] = useState<Task[] | null>(null);

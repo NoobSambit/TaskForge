@@ -5,16 +5,7 @@ import { useMemo } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DeleteTaskButton from "./DeleteTaskButton";
-
-export type Task = {
-  _id: string;
-  title: string;
-  description?: string | null;
-  status: "todo" | "in_progress" | "done";
-  priority: number; // 1..5
-  createdAt?: string;
-  updatedAt?: string;
-};
+import type { Task } from "@/types";
 
 export default function TaskCard({ task, onDeleted }: { task: Task; onDeleted?: (id: string) => void }) {
   const statusLabel = useMemo(() => {
