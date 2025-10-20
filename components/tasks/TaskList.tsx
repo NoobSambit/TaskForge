@@ -61,6 +61,19 @@ export default function TaskList() {
     setTasks((prev) => (prev ? prev.filter((t) => t._id !== id) : prev));
   }
 
+  function handleUpdated(updated: Task) {
+    setTasks((prev) => {
+      if (!prev) return prev;
+      if (status && updated.status !== status) {
+        return prev.filter((t) => t._id !== updated._id);
+      }
+      if (priority && String(updated.priority) !== priority) {
+        return prev.filter((t) => t._id !== updated._id);
+      }
+      return prev.map((t) => (t._id === updated._id ? updated : t));
+    });
+  }
+
   return (
     <section className="space-y-6">
       <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -98,7 +111,7 @@ export default function TaskList() {
       ) : tasks && tasks.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {tasks.map((task) => (
-            <TaskCard key={task._id} task={task} onDeleted={handleDeleted} />)
+            <TaskCard key={task._id} task={task} onDeleted={handleDeleted} onUpdated={handleUpdated} />)
           )}
         </div>
       ) : (

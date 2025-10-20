@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import CompleteTaskButton from "@/components/tasks/CompleteTaskButton";
 import DeleteTaskButton from "@/components/tasks/DeleteTaskButton";
 
 async function getTask(id: string) {
@@ -29,6 +30,7 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
           <p className="text-sm text-muted-foreground">View information about this task.</p>
         </div>
         <div className="flex items-center gap-2">
+          <CompleteTaskButton taskId={params.id} currentStatus={task.status} />
           <Link href={`/tasks/${params.id}/edit`} className="inline-flex">
             <Button variant="outline">Edit</Button>
           </Link>
