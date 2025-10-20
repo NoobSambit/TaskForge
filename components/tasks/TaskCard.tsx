@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import CompleteTaskButton from "./CompleteTaskButton";
 import DeleteTaskButton from "./DeleteTaskButton";
 import type { Task } from "@/types";
 
-export default function TaskCard({ task, onDeleted }: { task: Task; onDeleted?: (id: string) => void }) {
+export default function TaskCard({ task, onDeleted, onUpdated }: { task: Task; onDeleted?: (id: string) => void; onUpdated?: (task: Task) => void }) {
   const statusLabel = useMemo(() => {
     switch (task.status) {
       case "in_progress":
@@ -42,6 +43,7 @@ export default function TaskCard({ task, onDeleted }: { task: Task; onDeleted?: 
         <Link href={`/tasks/${task._id}/edit`} className="inline-flex">
           <Button variant="outline" size="sm">Edit</Button>
         </Link>
+        <CompleteTaskButton taskId={task._id} currentStatus={task.status} size="sm" onUpdated={onUpdated} />
         <DeleteTaskButton taskId={task._id} size="sm" onDeleted={onDeleted} />
       </CardFooter>
     </Card>
