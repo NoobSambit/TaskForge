@@ -1,7 +1,6 @@
 /// <reference lib="webworker" />
 
 import localforage from "localforage";
-import type { LocalForage } from "localforage";
 import {
   BulkGetResult,
   DBWorkerRequest,
@@ -16,9 +15,11 @@ import {
   isExpired,
 } from "../lib/indexedDB.shared";
 
-const instances = new Map<StoreName, LocalForage>();
+type LocalForageInstance = typeof localforage;
 
-const getInstance = async (store: StoreName): Promise<LocalForage> => {
+const instances = new Map<StoreName, LocalForageInstance>();
+
+const getInstance = async (store: StoreName): Promise<LocalForageInstance> => {
   const existing = instances.get(store);
   if (existing) {
     return existing;
@@ -131,8 +132,14 @@ const handleRequest = async (request: DBWorkerRequest): Promise<void> => {
     case "cleanupExpired":
       await handleCleanup(request);
       return;
-    default:
-      respond({ id: request.id, success: false, error: `Unknown method: ${request.method}` });
+    default: {
+      const exhaustiveCheck: never = request;
+      respond({ 
+        id: (exhaustiveCheck as DBWorkerRequest).id, 
+        success: false, 
+        error: `Unknown method: ${(exhaustiveCheck as DBWorkerRequest).method}` 
+      });
+    }
   }
 };
 

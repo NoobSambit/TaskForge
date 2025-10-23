@@ -72,3 +72,52 @@ export type SyncQueueSnapshot<TPayload = Record<string, unknown>> = {
   conflicts: number;
   lastUpdatedAt: string;
 };
+
+export type SyncOperationMetadata = {
+  tempId?: string;
+  timestamp: string;
+  mutationType: SyncOperation;
+  payloadDiff?: Record<string, unknown>;
+  version?: number;
+};
+
+export type SyncQueueEventType = "enqueue" | "success" | "failure" | "conflict" | "cleared";
+
+export type SyncQueueEvent = {
+  type: SyncQueueEventType;
+  itemId?: string;
+  item?: SyncQueueItem;
+  error?: string;
+  conflict?: SyncConflictPayload;
+};
+
+export type SyncWorkerMessageType = "process" | "shutdown" | "result";
+
+export type SyncWorkerProcessMessage = {
+  type: "process";
+  id: string;
+  items: Array<SyncQueueItem>;
+  authToken?: string;
+};
+
+export type SyncWorkerResultMessage = {
+  type: "result";
+  id: string;
+  itemId: string;
+  success: boolean;
+  error?: string;
+  conflict?: {
+    local: Record<string, unknown> | null;
+    remote: Record<string, unknown> | null;
+    message?: string;
+  };
+};
+
+export type SyncWorkerShutdownMessage = {
+  type: "shutdown";
+};
+
+export type SyncWorkerMessage =
+  | SyncWorkerProcessMessage
+  | SyncWorkerResultMessage
+  | SyncWorkerShutdownMessage;
