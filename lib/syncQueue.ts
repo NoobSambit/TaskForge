@@ -88,8 +88,9 @@ const createBatchId = (): string => {
   return `batch-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 };
 
-const computeBackoff = (attempts: number): number => {
-  const exponential = BASE_BACKOFF_MS * Math.pow(2, attempts - 1);
+export const computeBackoffDelay = (attempts: number): number => {
+  const normalizedAttempts = Math.max(1, attempts);
+  const exponential = BASE_BACKOFF_MS * Math.pow(2, normalizedAttempts - 1);
   const jitter = Math.random() * BASE_BACKOFF_MS;
   return Math.min(exponential + jitter, MAX_BACKOFF_MS);
 };
@@ -238,7 +239,7 @@ export const markFailure = async (itemId: string, error: string): Promise<void> 
   if (newAttempts >= MAX_ATTEMPTS) {
     status = SyncQueueItemStatus.Failed;
   } else {
-    const backoffMs = computeBackoff(newAttempts);
+    const backoffMs = computeBackoffDelay(newAttempts);
     scheduledAt = new Date(Date.now() + backoffMs).toISOString();
   }
 
