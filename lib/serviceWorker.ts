@@ -190,3 +190,113 @@ export const waitForServiceWorkerReady = async (): Promise<ServiceWorkerRegistra
     return null;
   }
 };
+
+export const postMessageWithResponse = async <TMessage, TResponse>(
+  message: TMessage,
+  timeout = 5000
+): Promise<TResponse | null> => {
+  if (!isServiceWorkerSupported()) {
+    return null;
+  }
+
+  try {
+    const controller = navigator.serviceWorker.controller;
+    if (!controller) {
+      return null;
+    }
+
+    return new Promise<TResponse | null>((resolve) => {
+      const channel = new MessageChannel();
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+      channel.port1.onmessage = (event) => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        resolve(event.data as TResponse);
+      };
+
+      timeoutId = setTimeout(() => {
+        channel.port1.close();
+        resolve(null);
+      }, timeout);
+
+      controller.postMessage(message, [channel.port2]);
+    });
+  } catch (error) {
+    console.error("[ServiceWorker] postMessageWithResponse failed", error);
+    return null;
+  }
+};
+
+export const clearServiceWorkerCache = async (): Promise<boolean> => {
+  const response = await postMessageWithResponse<{ type: string }, { success: boolean }>(
+    { type: "CLEAR_CACHE" },
+    5000
+  );
+
+  return response?.success ?? false;
+};
+
+export const cleanupServiceWorkerCache = async (): Promise<boolean> => {
+  const response = await postMessageWithResponse<{ type: string }, { success: boolean }>(
+    { type: "CLEANUP_CACHE" },
+    5000
+  );
+
+  return response?.success ?? false;
+};
+
+export const getServiceWorkerQueueStatus = async (): Promise<{
+  total: number;
+  pending: number;
+  failed: number;
+  synced: number;
+} | null> => {
+  const response = await postMessageWithResponse<
+    { type: string },
+    {
+      success: boolean;
+      status?: { total: number; pending: number; failed: number; synced: number };
+    }
+  >({ type: "GET_QUEUE_STATUS" }, 5000);
+
+  return response?.status ?? null;
+};
+
+export const triggerManualSync = async (): Promise<{
+  processed: number;
+  failed: number;
+} | null> => {
+  const response = await postMessageWithResponse<
+    { type: string },
+    {
+      success: boolean;
+      result?: { processed: number; failed: number };
+      error?: string;
+    }
+  >({ type: "SYNC_NOW" }, 30000);
+
+  return response?.result ?? null;
+};
+
+export const logAnalyticsToServiceWorker = async (payload: Record<string, unknown>): Promise<boolean> => {
+  return postMessageToServiceWorker({
+    type: "LOG_ANALYTICS",
+    payload,
+  });
+};
+
+export const onServiceWorkerMessage = (
+  listener: (message: MessageEvent) => void
+): (() => void) => {
+  if (!isServiceWorkerSupported()) {
+    return () => undefined;
+  }
+
+  navigator.serviceWorker.addEventListener("message", listener);
+
+  return () => {
+    navigator.serviceWorker.removeEventListener("message", listener);
+  };
+};
