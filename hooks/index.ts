@@ -19,3 +19,12 @@ export type { UseOfflineTasksReturn } from "./useOfflineTasks";
 
 export { useSyncStatus } from "./useSyncStatus";
 export type { UseSyncStatusReturn, QueueStatus } from "./useSyncStatus";
+
+export { useServiceWorker } from "./useServiceWorker";
+export type {
+  ServiceWorkerQueueStatus,
+  ServiceWorkerSyncResult,
+  ServiceWorkerState,
+  ServiceWorkerActions,
+  UseServiceWorkerOptions,
+} from "./useServiceWorker";
