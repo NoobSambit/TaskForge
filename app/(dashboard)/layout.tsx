@@ -5,6 +5,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { OfflineSyncProvider } from "@/components/providers/OfflineSyncProvider";
 import { OfflineBanner, ConflictResolver, InstallPrompt } from "@/components/sync";
+import { SyncRetryBanner } from "@/components/sync/SyncRetryBanner";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const session = await auth();
@@ -16,6 +17,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     <OfflineSyncProvider>
       <div className="min-h-screen">
         <OfflineBanner />
+        <SyncRetryBanner />
         <Header />
         <div className="mx-auto flex max-w-7xl gap-6 px-4 py-6">
           <Sidebar />

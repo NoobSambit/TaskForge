@@ -1,78 +1,44 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import TaskCard from "./TaskCard";
-import type { Task } from "@/types";
+import { useOfflineTasks } from "@/hooks/useOfflineTasks";
 
 export default function TaskList() {
-  const [tasks, setTasks] = useState<Task[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { tasks: allTasks, isLoading, isHydrated } = useOfflineTasks();
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("");
   const [priority, setPriority] = useState<string>("");
 
-  const query = useMemo(() => {
-    const p = new URLSearchParams();
-    if (search.trim()) p.set("search", search.trim());
-    if (status) p.set("status", status);
-    if (priority) p.set("priority", priority);
-    return p.toString();
-  }, [search, status, priority]);
+  // Apply client-side filtering
+  const filteredTasks = useMemo(() => {
+    let filtered = allTasks;
 
-  useEffect(() => {
-    let ignore = false;
-    const controller = new AbortController();
-
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const url = query ? `/api/tasks?${query}` : "/api/tasks";
-        const res = await fetch(url, { signal: controller.signal });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data?.error || `Failed to fetch tasks (status ${res.status})`);
-        }
-        const data = (await res.json()) as Task[];
-        if (!ignore) setTasks(data);
-      } catch (err) {
-        if ((err as any).name === "AbortError") return;
-        console.error(err);
-        if (!ignore) setError((err as Error).message || "Failed to load tasks");
-      } finally {
-        if (!ignore) setLoading(false);
-      }
+    // Filter by search (title)
+    if (search.trim()) {
+      const searchLower = search.trim().toLowerCase();
+      filtered = filtered.filter((task) =>
+        task.title.toLowerCase().includes(searchLower)
+      );
     }
 
-    load();
-    return () => {
-      ignore = true;
-      controller.abort();
-    };
-  }, [query]);
+    // Filter by status
+    if (status) {
+      filtered = filtered.filter((task) => task.status === status);
+    }
 
-  function handleDeleted(id: string) {
-    setTasks((prev) => (prev ? prev.filter((t) => t._id !== id) : prev));
-  }
+    // Filter by priority
+    if (priority) {
+      filtered = filtered.filter((task) => String(task.priority) === priority);
+    }
 
-  function handleUpdated(updated: Task) {
-    setTasks((prev) => {
-      if (!prev) return prev;
-      if (status && updated.status !== status) {
-        return prev.filter((t) => t._id !== updated._id);
-      }
-      if (priority && String(updated.priority) !== priority) {
-        return prev.filter((t) => t._id !== updated._id);
-      }
-      return prev.map((t) => (t._id === updated._id ? updated : t));
-    });
-  }
+    return filtered;
+  }, [allTasks, search, status, priority]);
 
   return (
     <section className="space-y-6">
@@ -104,15 +70,13 @@ export default function TaskList() {
         </Link>
       </div>
 
-      {loading ? (
+      {!isHydrated || isLoading ? (
         <div className="text-sm text-muted-foreground">Loading tasks...</div>
-      ) : error ? (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
-      ) : tasks && tasks.length > 0 ? (
+      ) : filteredTasks.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {tasks.map((task) => (
-            <TaskCard key={task._id} task={task} onDeleted={handleDeleted} onUpdated={handleUpdated} />)
-          )}
+          {filteredTasks.map((task) => (
+            <TaskCard key={task._id} task={task} />
+          ))}
         </div>
       ) : (
         <div className="text-sm text-muted-foreground">No tasks found.</div>
