@@ -393,6 +393,10 @@ const shouldNotCache = (request) => {
     return true;
   }
 
+  if (request.headers.has("authorization")) {
+    return true;
+  }
+
   // Don't cache authenticated mutations
   if (["POST", "PUT", "DELETE", "PATCH"].includes(request.method)) {
     return true;

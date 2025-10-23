@@ -392,6 +392,21 @@ export const waitForOnline = async (timeoutMs?: number): Promise<boolean> => {
   });
 };
 
+export const __resetNetworkStatusForTesting = () => {
+  if (heartbeatTimeoutId) {
+    clearTimeout(heartbeatTimeoutId);
+    heartbeatTimeoutId = null;
+  }
+
+  listeners.clear();
+  currentStatus = detectInitialStatus();
+  lastTransition = null;
+  heartbeatUrl = null;
+  heartbeatIntervalMs = 30000;
+  heartbeatBackoffMultiplier = 1;
+  consecutiveFailures = 0;
+};
+
 // Initialize in browser environment
 if (isBrowser()) {
   currentStatus = detectInitialStatus();
