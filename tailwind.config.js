@@ -1,4 +1,3 @@
-/**** TailwindCSS v4 configuration ****/
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],

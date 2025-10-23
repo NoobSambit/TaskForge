@@ -1,0 +1,48 @@
+
+> nextjs-app@0.1.0 build
+> next build
+
+⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+   ▲ Next.js 15.5.6
+
+   Creating an optimized production build ...
+Failed to compile.
+
+./components/auth/actions.ts
+Error:   [31mx[0m It is not allowed to define inline "use server" annotated Server Actions in Client Components.
+  [31m|[0m To use Server Actions in a Client Component, you can either export them from a separate file with "use server" at the top, or pass them down through props from a Server Component.
+  [31m|[0m
+  [31m|[0m Read more: https://nextjs.org/docs/app/api-reference/directives/use-server#using-server-functions-in-a-client-component
+
+   ,-[[36;1;4m/home/engine/project/components/auth/actions.ts[0m:4:1]
+ [2m1[0m | import { signOut } from "@/lib/auth";
+ [2m2[0m | 
+ [2m3[0m | export async function signOutAction() {
+ [2m4[0m |   "use server";
+   : [35;1m  ^^^^^^^^^^^^[0m
+ [2m5[0m |   await signOut({ redirectTo: "/" });
+ [2m6[0m | }
+   `----
+
+Import trace for requested module:
+./components/auth/actions.ts
+./components/auth/UserMenu.tsx
+
+./lib/db.ts
+Dynamic Code Evaluation (e. g. 'eval', 'new Function', 'WebAssembly.compile') not allowed in Edge Runtime 
+Learn More: https://nextjs.org/docs/messages/edge-dynamic-code-evaluation
+
+The error was caused by importing 'mongoose/dist/browser.umd.js' in './lib/db.ts'.
+
+Import trace for requested module:
+  ./lib/db.ts
+  ./lib/auth.ts
+  ./middleware.ts
+
+
+> Build failed because of webpack errors
