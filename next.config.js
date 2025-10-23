@@ -4,6 +4,7 @@ const path = require("path");
 const nextConfig = {
   reactStrictMode: true,
   output: "standalone",
+  turbopack: {},
   async headers() {
     return [
       {
