@@ -1,4 +1,4 @@
-import type { LocalForage } from "localforage";
+import type LocalForage from "localforage";
 import {
   BulkGetResult,
   DBWorkerRequest,
@@ -264,10 +264,10 @@ const createBackend = async (store: StoreName): Promise<StorageBackend> => {
     return createMemoryBackend(store);
   }
 
-  const module = await loadLocalforage();
-  if (module) {
+  const localforageModule = await loadLocalforage();
+  if (localforageModule) {
     try {
-      return await createLocalForageBackend(store, module);
+      return await createLocalForageBackend(store, localforageModule);
     } catch (error) {
       console.warn(`[IndexedDB] Falling back from localforage for store ${store}`, error);
     }
@@ -417,16 +417,16 @@ const callWorkerBulkGet = async (
   store: StoreName,
   keys: Array<string>
 ): Promise<Array<BulkGetResult> | null> =>
-  sendWorkerRequest<Array<BulkGetResult>>({ method: "bulkGet", store, keys });
+  sendWorkerRequest<Array<BulkGetResult>>({ method: "bulkGet", store, keys } as Omit<DBWorkerRequest, "id">);
 
 const callWorkerBulkSet = async (
   store: StoreName,
   entries: Array<WorkerBulkSetEntry>
 ): Promise<WorkerBulkSetSummary | null> =>
-  sendWorkerRequest<WorkerBulkSetSummary>({ method: "bulkSet", store, entries });
+  sendWorkerRequest<WorkerBulkSetSummary>({ method: "bulkSet", store, entries } as Omit<DBWorkerRequest, "id">);
 
 const callWorkerCleanup = async (store?: StoreName): Promise<WorkerCleanupSummary | null> =>
-  sendWorkerRequest<WorkerCleanupSummary>({ method: "cleanupExpired", store });
+  sendWorkerRequest<WorkerCleanupSummary>({ method: "cleanupExpired", store } as Omit<DBWorkerRequest, "id">);
 
 const MIGRATIONS: Record<number, (context: MigrationContext) => Promise<void>> = {
   1: async ({ getBackend }) => {

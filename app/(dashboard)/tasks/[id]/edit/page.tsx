@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 async function getTask(id: string) {
   try {
-    const hdrs = headers();
+    const hdrs = await headers();
     const host = hdrs.get("host");
     const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
     const base = host ? `${protocol}://${host}` : "";
@@ -21,10 +21,13 @@ async function getTask(id: string) {
   }
 }
 
-export default async function EditTaskPage({ params }: { params: { id: string } }) {
+export default async function EditTaskPage({ params }: { params: Promise<{ id: string }> }) {
+  // Await params for Next.js 15
+  const { id } = await params;
+  
   // Try to fetch from server, but don't fail if it's not available
-  const serverTask = await getTask(params.id);
+  const serverTask = await getTask(id);
 
   // Let the client component handle the task display with offline cache fallback
-  return <TaskEditClient taskId={params.id} serverTask={serverTask} />;
+  return <TaskEditClient taskId={id} serverTask={serverTask} />;
 }

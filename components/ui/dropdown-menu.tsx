@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 type Ctx = {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  triggerRef: React.RefObject<HTMLElement>;
+  triggerRef: React.RefObject<HTMLElement | null>;
 };
 
 const DropdownMenuContext = React.createContext<Ctx | null>(null);

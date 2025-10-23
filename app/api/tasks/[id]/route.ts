@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export async function GET(_req: NextRequest, ctx: { params: { id: string } }) {
+export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
     const { auth } = await import("../../../../lib/auth");
     const session = await auth();
@@ -9,7 +9,7 @@ export async function GET(_req: NextRequest, ctx: { params: { id: string } }) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = ctx.params;
+    const { id } = await ctx.params;
 
     const { dbConnect } = await import("../../../../lib/db");
     await dbConnect();
@@ -24,12 +24,13 @@ export async function GET(_req: NextRequest, ctx: { params: { id: string } }) {
 
     return NextResponse.json(task, { status: 200 });
   } catch (err: any) {
-    console.error(`GET /api/tasks/${ctx.params.id} error:`, err);
+    const params = await ctx.params;
+    console.error(`GET /api/tasks/${params.id} error:`, err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function PUT(req: NextRequest, ctx: { params: { id: string } }) {
+export async function PUT(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
     const { auth } = await import("../../../../lib/auth");
     const session = await auth();
@@ -63,9 +64,10 @@ export async function PUT(req: NextRequest, ctx: { params: { id: string } }) {
 
     const TaskModule = await import("../../../../models/Task");
     const Task = TaskModule.default;
-
+    
+    const params = await ctx.params;
     const updated = await Task.findOneAndUpdate(
-      { _id: ctx.params.id, userId: session.user.id },
+      { _id: params.id, userId: session.user.id },
       updateData,
       { new: true, runValidators: true }
     );
@@ -76,12 +78,13 @@ export async function PUT(req: NextRequest, ctx: { params: { id: string } }) {
 
     return NextResponse.json(updated, { status: 200 });
   } catch (err: any) {
-    console.error(`PUT /api/tasks/${ctx.params.id} error:`, err);
+    const params = await ctx.params;
+    console.error(`PUT /api/tasks/${params.id} error:`, err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function DELETE(_req: NextRequest, ctx: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
     const { auth } = await import("../../../../lib/auth");
     const session = await auth();
@@ -94,8 +97,9 @@ export async function DELETE(_req: NextRequest, ctx: { params: { id: string } })
 
     const TaskModule = await import("../../../../models/Task");
     const Task = TaskModule.default;
-
-    const deleted = await Task.findOneAndDelete({ _id: ctx.params.id, userId: session.user.id });
+    
+    const params = await ctx.params;
+    const deleted = await Task.findOneAndDelete({ _id: params.id, userId: session.user.id });
 
     if (!deleted) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
@@ -103,7 +107,8 @@ export async function DELETE(_req: NextRequest, ctx: { params: { id: string } })
 
     return new NextResponse(null, { status: 204 });
   } catch (err: any) {
-    console.error(`DELETE /api/tasks/${ctx.params.id} error:`, err);
+    const params = await ctx.params;
+    console.error(`DELETE /api/tasks/${params.id} error:`, err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
