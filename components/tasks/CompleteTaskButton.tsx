@@ -1,48 +1,40 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button, type ButtonProps } from "@/components/ui/button";
+import { useOfflineTasks } from "@/hooks/useOfflineTasks";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import type { Task } from "@/types";
 
 export default function CompleteTaskButton({
   taskId,
   currentStatus,
-  onUpdated,
   className,
   ...props
 }: {
   taskId: string;
   currentStatus: Task["status"];
-  onUpdated?: (task: Task) => void;
 } & ButtonProps) {
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<Task["status"]>(currentStatus);
-  const router = useRouter();
+  const { updateTask } = useOfflineTasks();
+  const { isOnline } = useNetworkStatus();
 
-  const isDone = status === "done";
+  const isDone = currentStatus === "done";
   const nextStatus: Task["status"] = isDone ? "todo" : "done";
 
   async function handleClick() {
     if (loading) return;
     try {
       setLoading(true);
-      const res = await fetch(`/api/tasks/${taskId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || `Failed to update (status ${res.status})`);
-      }
-      const updated = (await res.json()) as Task;
-      setStatus(updated.status);
-      onUpdated?.(updated);
-      router.refresh();
+      await updateTask(taskId, { status: nextStatus });
     } catch (err) {
       console.error(err);
-      alert((err as Error).message || "Failed to update task");
+      const message = (err as Error).message || "Failed to update task";
+      if (!isOnline) {
+        alert(`${message} - Changes will be synced when you're back online.`);
+      } else {
+        alert(message);
+      }
     } finally {
       setLoading(false);
     }

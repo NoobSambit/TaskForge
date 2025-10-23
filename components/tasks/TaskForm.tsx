@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { useOfflineTasks } from "@/hooks/useOfflineTasks";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 export type TaskFormValues = {
   title: string;
@@ -30,6 +32,8 @@ export default function TaskForm({
   initialValues?: Partial<TaskFormValues>;
 }) {
   const router = useRouter();
+  const { createTask, updateTask } = useOfflineTasks();
+  const { isOnline } = useNetworkStatus();
 
   const [values, setValues] = useState<TaskFormValues>({
     title: "",
@@ -72,35 +76,50 @@ export default function TaskForm({
     setErrors({});
 
     try {
-      const endpoint = mode === "create" ? "/api/tasks" : `/api/tasks/${taskId}`;
-      const method = mode === "create" ? "POST" : "PUT";
-      const res = await fetch(endpoint, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
+      if (mode === "create") {
+        // Create new task
+        const task = await createTask({
+          title: values.title,
+          description: values.description,
+          status: values.status,
+          priority: values.priority,
+          userId: "", // Will be set by the API
+        });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (res.status === 400 && data?.details) {
-          setErrors(data.details as ZodErrorFlatten);
+        // Only navigate when online to avoid crashes
+        if (isOnline) {
+          router.push(`/tasks/${task._id}`);
         } else {
-          setGeneralError(data?.error || `Request failed (status ${res.status})`);
+          // Stay on page with success message when offline
+          alert("Task created! It will be synced when you're back online.");
+          router.push("/dashboard");
         }
-        return;
-      }
+      } else if (taskId) {
+        // Update existing task
+        await updateTask(taskId, {
+          title: values.title,
+          description: values.description,
+          status: values.status,
+          priority: values.priority,
+        });
 
-      const data = await res.json();
-      const id = data?._id as string | undefined;
-      router.refresh();
-      if (id) {
-        router.push(`/tasks/${id}`);
-      } else {
-        router.push("/dashboard");
+        // Only navigate when online to avoid crashes
+        if (isOnline) {
+          router.push(`/tasks/${taskId}`);
+        } else {
+          // Stay on page with success message when offline
+          alert("Task updated! Changes will be synced when you're back online.");
+          router.back();
+        }
       }
     } catch (err) {
       console.error(err);
-      setGeneralError((err as Error).message || "Something went wrong");
+      const message = (err as Error).message || "Something went wrong";
+      if (!isOnline) {
+        setGeneralError(`${message} - Changes will be synced when you're back online.`);
+      } else {
+        setGeneralError(message);
+      }
     } finally {
       setSubmitting(false);
     }
