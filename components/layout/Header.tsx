@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import UserMenu from "@/components/auth/UserMenu";
+import { SyncIndicator } from "@/components/sync";
 
 export default async function Header() {
   const session = await auth();
@@ -11,7 +12,8 @@ export default async function Header() {
           <span className="inline-flex h-8 w-8 items-center justify-center rounded bg-primary text-primary-foreground font-semibold">A</span>
           <span className="text-lg font-semibold">App</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <SyncIndicator />
           <UserMenu user={session?.user as any} />
         </div>
       </div>
