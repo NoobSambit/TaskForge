@@ -13,3 +13,9 @@ export {
   useOptionalNetworkStatusContext,
 } from "./NetworkStatusContext";
 export type { NetworkStatusProviderProps } from "./NetworkStatusContext";
+
+export { useOfflineTasks } from "./useOfflineTasks";
+export type { UseOfflineTasksReturn } from "./useOfflineTasks";
+
+export { useSyncStatus } from "./useSyncStatus";
+export type { UseSyncStatusReturn, QueueStatus } from "./useSyncStatus";
