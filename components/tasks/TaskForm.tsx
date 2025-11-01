@@ -7,8 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useOfflineTasks } from "@/hooks/useOfflineTasks";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import SmartTaskInput from "./SmartTaskInput";
+import { AiParseResult } from "@/lib/ai";
 
 export type TaskFormValues = {
   title: string;
@@ -22,14 +25,22 @@ type ZodErrorFlatten = {
   formErrors?: string[];
 };
 
+type AIFilledFields = {
+  title?: boolean;
+  description?: boolean;
+  priority?: boolean;
+};
+
 export default function TaskForm({
   mode,
   taskId,
   initialValues,
+  enableSmartInput = true,
 }: {
   mode: "create" | "edit";
   taskId?: string;
   initialValues?: Partial<TaskFormValues>;
+  enableSmartInput?: boolean;
 }) {
   const router = useRouter();
   const { createTask, updateTask } = useOfflineTasks();
@@ -42,6 +53,8 @@ export default function TaskForm({
     priority: 3,
   });
 
+  const [smartInputValue, setSmartInputValue] = useState("");
+  const [aiFilledFields, setAiFilledFields] = useState<AIFilledFields>({});
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<ZodErrorFlatten>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -65,7 +78,43 @@ export default function TaskForm({
 
   function update<K extends keyof TaskFormValues>(key: K, value: TaskFormValues[K]) {
     setValues((v) => ({ ...v, [key]: value }));
+    // Clear AI badge when user manually edits
+    if (aiFilledFields[key as keyof AIFilledFields]) {
+      setAiFilledFields((prev) => ({ ...prev, [key]: false }));
+    }
   }
+
+  const handleAISuggestionAccepted = (result: AiParseResult) => {
+    const newAiFields: AIFilledFields = {};
+    
+    if (result.title) {
+      setValues((v) => ({ ...v, title: result.title }));
+      newAiFields.title = true;
+    }
+    
+    if (result.description) {
+      setValues((v) => ({ ...v, description: result.description }));
+      newAiFields.description = true;
+    }
+    
+    if (result.priority !== undefined) {
+      setValues((v) => ({ ...v, priority: result.priority! }));
+      newAiFields.priority = true;
+    }
+    
+    setAiFilledFields(newAiFields);
+    setSmartInputValue(""); // Clear the smart input after accepting
+  };
+
+  const handleEnterCreate = () => {
+    if (mode === "create" && values.title.trim()) {
+      // Trigger form submission
+      const form = document.querySelector("form");
+      if (form) {
+        form.requestSubmit();
+      }
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -133,8 +182,26 @@ export default function TaskForm({
         </div>
       ) : null}
 
+      {mode === "create" && enableSmartInput && (
+        <SmartTaskInput
+          value={smartInputValue}
+          onChange={setSmartInputValue}
+          onSuggestionAccepted={handleAISuggestionAccepted}
+          onEnterCreate={handleEnterCreate}
+          disabled={submitting}
+          enableAI={isOnline}
+        />
+      )}
+
       <div className="space-y-2">
-        <Label htmlFor="title">Title</Label>
+        <Label htmlFor="title" className="flex items-center gap-2">
+          Title
+          {aiFilledFields.title && (
+            <Badge variant="ai" className="text-xs">
+              AI
+            </Badge>
+          )}
+        </Label>
         <Input
           id="title"
           value={values.title}
@@ -146,7 +213,14 @@ export default function TaskForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description" className="flex items-center gap-2">
+          Description
+          {aiFilledFields.description && (
+            <Badge variant="ai" className="text-xs">
+              AI
+            </Badge>
+          )}
+        </Label>
         <Textarea
           id="description"
           value={values.description}
@@ -173,7 +247,14 @@ export default function TaskForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="priority">Priority</Label>
+          <Label htmlFor="priority" className="flex items-center gap-2">
+            Priority
+            {aiFilledFields.priority && (
+              <Badge variant="ai" className="text-xs">
+                AI
+              </Badge>
+            )}
+          </Label>
           <Select
             id="priority"
             value={String(values.priority)}
