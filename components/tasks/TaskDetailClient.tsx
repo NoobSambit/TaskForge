@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import CompleteTaskButton from "./CompleteTaskButton";
 import DeleteTaskButton from "./DeleteTaskButton";
 import { useOfflineTasks } from "@/hooks/useOfflineTasks";
@@ -133,9 +134,23 @@ export default function TaskDetailClient({ taskId, serverTask }: TaskDetailClien
               )}
             </div>
           </div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            {task.status === "in_progress" ? "In progress" : task.status === "done" ? "Done" : "To do"}
+          <div className="mt-1 flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-muted-foreground">
+              {task.status === "in_progress" ? "In progress" : task.status === "done" ? "Done" : "To do"}
+            </span>
+            <Badge variant="outline" className="text-xs capitalize">
+              {task.difficulty}
+            </Badge>
           </div>
+          {task.tags && task.tags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {task.tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
         </CardHeader>
         {task.description ? (
           <CardContent>
@@ -144,9 +159,16 @@ export default function TaskDetailClient({ taskId, serverTask }: TaskDetailClien
             </div>
           </CardContent>
         ) : null}
-        <CardFooter className="justify-between text-xs text-muted-foreground">
-          <span>Created: {task.createdAt ? new Date(task.createdAt).toLocaleString() : ""}</span>
-          <span>Updated: {task.updatedAt ? new Date(task.updatedAt).toLocaleString() : ""}</span>
+        <CardFooter className="flex-col gap-2 items-start text-xs text-muted-foreground">
+          <div className="flex justify-between w-full">
+            <span>Created: {task.createdAt ? new Date(task.createdAt).toLocaleString() : ""}</span>
+            <span>Updated: {task.updatedAt ? new Date(task.updatedAt).toLocaleString() : ""}</span>
+          </div>
+          {task.completedAt && (
+            <span className="text-green-600 dark:text-green-400">
+              Completed: {new Date(task.completedAt).toLocaleString()}
+            </span>
+          )}
         </CardFooter>
       </Card>
 
