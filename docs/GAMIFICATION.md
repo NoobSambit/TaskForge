@@ -475,6 +475,175 @@ async function awardXpForTask(taskId: string, userId: string) {
 }
 ```
 
+### XP Awarding Service
+
+The gamification system includes a complete XP awarding service that handles task completion, duplicate prevention, atomic database updates, activity logging, and event emission.
+
+#### Basic Usage
+
+```typescript
+import { awardXpForTaskCompletion } from '@/lib/gamification';
+
+// Award XP when a task is completed
+const result = await awardXpForTaskCompletion(taskId, userId);
+
+if (result.success) {
+  console.log(`Awarded ${result.xpAwarded} XP`);
+  console.log(`Total XP: ${result.totalXp}`);
+  console.log(`Level: ${result.newLevel}`);
+}
+```
+
+#### Features
+
+**Duplicate Prevention:**
+- Uses a unique compound index on `ActivityLog` (`userId`, `taskId`, `activityType`)
+- Prevents XP inflation from repeated completion calls
+- Returns idempotent results for duplicate requests
+
+**Atomic Updates:**
+- Uses MongoDB's `$inc` operator for XP updates
+- Ensures consistency in concurrent scenarios
+- Handles race conditions gracefully
+
+**Activity Logging:**
+- Records detailed XP computation in metadata
+- Includes task information and applied rules
+- Enables XP audit trail and analytics
+
+**Event Emission:**
+- Emits `xpAwarded` event with full computation details
+- Emits `levelUp` event when user levels up
+- Emits `levelCheckPending` for downstream processing (achievements, etc.)
+
+**Level Calculation:**
+- Automatic level progression based on XP
+- Formula: `level = floor(sqrt(xp / 50)) + 1`
+- Level thresholds: Level 1 (0-49 XP), Level 2 (50-199 XP), Level 3 (200-449 XP), etc.
+
+#### API Reference
+
+##### `awardXpForTaskCompletion(taskId, userId, options?)`
+
+Awards XP for completing a task.
+
+**Parameters:**
+- `taskId` (string): ID of the completed task
+- `userId` (string): ID of the user who completed the task
+- `options` (optional):
+  - `now` (Date): Reference time for calculations (mainly for testing)
+  - `applyDailyCap` (boolean): Whether to enforce daily XP cap
+  - `dailyXpEarned` (number): XP already earned today (for cap calculation)
+  - `validateAge` (boolean): Whether to validate completion age
+  - `allowNegativeAdjustment` (boolean): Allow negative XP adjustments
+  - `activityType` (string): Custom activity type (default: "task_completion")
+
+**Returns:**
+```typescript
+{
+  success: boolean;
+  xpAwarded: number;
+  totalXp: number;
+  newLevel: number;
+  reason?: string;
+  alreadyAwarded?: boolean;
+}
+```
+
+##### `adjustXpForTaskReopen(taskId, userId)`
+
+Adjusts XP when a task is re-opened (status changes from done to not done).
+
+**Parameters:**
+- `taskId` (string): ID of the task being re-opened
+- `userId` (string): ID of the user
+
+**Returns:** Same as `awardXpForTaskCompletion`
+
+**Behavior:**
+- Removes previously awarded XP
+- Deletes original activity log entry
+- Creates new log entry for the adjustment
+- Prevents XP from going negative
+- Updates user level if needed
+
+##### `calculateLevelFromXp(xp)`
+
+Calculates user level from total XP.
+
+**Parameters:**
+- `xp` (number): Total experience points
+
+**Returns:** Level number (minimum 1)
+
+#### Event Listeners
+
+Subscribe to gamification events for downstream processing:
+
+```typescript
+import { gamificationEvents, GAMIFICATION_EVENTS } from '@/lib/gamification';
+
+// Listen for XP awards
+gamificationEvents.on(GAMIFICATION_EVENTS.XP_AWARDED, (event) => {
+  console.log(`User ${event.userId} earned ${event.xpDelta} XP`);
+  console.log('Applied rules:', event.computation.appliedRules);
+  
+  // Trigger SSE/WebSocket notification
+  // Check for achievement unlocks
+  // Update leaderboards
+});
+
+// Listen for level ups
+gamificationEvents.on(GAMIFICATION_EVENTS.LEVEL_UP, (event) => {
+  console.log(`User ${event.userId} reached level ${event.newLevel}!`);
+  
+  // Send notification
+  // Unlock level-based rewards
+});
+
+// Listen for level checks
+gamificationEvents.on(GAMIFICATION_EVENTS.LEVEL_CHECK_PENDING, (event) => {
+  // Trigger achievement checks
+  // Update UI via SSE
+});
+```
+
+#### Integration Example
+
+The XP awarding service is automatically integrated into the tasks API:
+
+```typescript
+// In /app/api/tasks/[id]/route.ts
+if (wasNotDone && isNowDone) {
+  // Task just completed - award XP
+  awardXpForTaskCompletion(taskId, userId).catch((error) => {
+    console.error("Error awarding XP:", error);
+  });
+} else if (wasDone && isNowNotDone) {
+  // Task re-opened - adjust XP
+  adjustXpForTaskReopen(taskId, userId).catch((error) => {
+    console.error("Error adjusting XP:", error);
+  });
+}
+```
+
+**Key Points:**
+- XP awarding is done asynchronously (doesn't block API response)
+- Errors are logged but don't fail the task update
+- Works for both online and offline sync scenarios
+- Idempotent - safe to call multiple times
+
+#### Offline Sync Integration
+
+When tasks are synced from offline mode, the XP awarding service will:
+
+1. Check if XP was already awarded for the task
+2. Only award XP once, even if sync happens multiple times
+3. Use the task's `completedAt` timestamp for XP calculation
+4. Apply the same rules and multipliers as online completions
+
+This ensures users get credit for offline work without XP inflation.
+
 ## Future Enhancements
 
 Potential additions to consider:

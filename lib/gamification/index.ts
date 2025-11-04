@@ -7,6 +7,22 @@
 // Export the main calculation function
 export { calculateXp, normalizeTaskData } from "./xpEngine";
 
+// Export XP awarding service
+export {
+  awardXpForTaskCompletion,
+  adjustXpForTaskReopen,
+  calculateLevelFromXp,
+} from "./awardXp";
+export type { AwardXpOptions, AwardXpResult } from "./awardXp";
+
+// Export event emitter and types
+export { gamificationEvents, GAMIFICATION_EVENTS } from "./events";
+export type {
+  XpAwardedEvent,
+  LevelUpEvent,
+  LevelCheckPendingEvent,
+} from "./events";
+
 // Export types for consumers
 export type {
   XpComputation,

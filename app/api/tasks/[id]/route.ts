@@ -70,6 +70,12 @@ export async function PUT(req: NextRequest, ctx: { params: { id: string } }) {
     const TaskModule = await import("../../../../models/Task");
     const Task = TaskModule.default;
 
+    // Get the current task state before update to detect status changes
+    const currentTask = await Task.findOne({ _id: ctx.params.id, userId: session.user.id });
+    if (!currentTask) {
+      return NextResponse.json({ error: "Task not found" }, { status: 404 });
+    }
+
     const updated = await Task.findOneAndUpdate(
       { _id: ctx.params.id, userId: session.user.id },
       updateData,
@@ -78,6 +84,29 @@ export async function PUT(req: NextRequest, ctx: { params: { id: string } }) {
 
     if (!updated) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
+    }
+
+    // Handle XP awarding for task completion
+    // Do this asynchronously to not block the response
+    if (updateData.status !== undefined) {
+      const wasNotDone = currentTask.status !== "done";
+      const isNowDone = updated.status === "done";
+      const wasDone = currentTask.status === "done";
+      const isNowNotDone = updated.status !== "done";
+
+      if (wasNotDone && isNowDone) {
+        // Task just completed - award XP
+        const { awardXpForTaskCompletion } = await import("../../../../lib/gamification");
+        awardXpForTaskCompletion(updated._id.toString(), session.user.id).catch((error) => {
+          console.error("Error awarding XP for task completion:", error);
+        });
+      } else if (wasDone && isNowNotDone) {
+        // Task re-opened - adjust XP
+        const { adjustXpForTaskReopen } = await import("../../../../lib/gamification");
+        adjustXpForTaskReopen(updated._id.toString(), session.user.id).catch((error) => {
+          console.error("Error adjusting XP for task reopen:", error);
+        });
+      }
     }
 
     return NextResponse.json(updated, { status: 200 });
