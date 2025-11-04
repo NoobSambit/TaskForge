@@ -99,6 +99,7 @@ describe("awardXpForTaskCompletion", () => {
       _id: mockUserId,
       xp: 146, // 25 base + 25*0.25 priority + 15 urgent = 46.25 rounded = 46
       level: 2,
+      preferences: {},
       save: vi.fn().mockResolvedValue(true),
     };
 
@@ -305,11 +306,15 @@ describe("awardXpForTaskCompletion", () => {
     vi.mocked(Task.findById).mockResolvedValue(mockTask as any);
     vi.mocked(User.findById).mockResolvedValue(mockUser as any);
     vi.mocked(ActivityLog.findOne).mockResolvedValue(null);
-    vi.mocked(User.findByIdAndUpdate).mockResolvedValue({
+    
+    const updatedUser = {
       _id: mockUserId,
       xp: 110,
       level: 2,
-    } as any);
+      preferences: {},
+      save: vi.fn().mockResolvedValue(undefined),
+    };
+    vi.mocked(User.findByIdAndUpdate).mockResolvedValue(updatedUser as any);
     
     // Simulate duplicate key error
     const duplicateError = new Error("Duplicate key");
@@ -356,6 +361,7 @@ describe("adjustXpForTaskReopen", () => {
       _id: mockUserId,
       xp: 100,
       level: 2,
+      preferences: {},
       save: vi.fn().mockResolvedValue(true),
     };
 
@@ -408,6 +414,7 @@ describe("adjustXpForTaskReopen", () => {
       _id: mockUserId,
       xp: -50, // Would go negative
       level: 1,
+      preferences: {},
       save: vi.fn().mockResolvedValue(true),
     };
 
