@@ -517,9 +517,10 @@ if (result.success) {
 - Emits `levelCheckPending` for downstream processing (achievements, etc.)
 
 **Level Calculation:**
-- Automatic level progression based on XP
-- Formula: `level = floor(sqrt(xp / 50)) + 1`
-- Level thresholds: Level 1 (0-49 XP), Level 2 (50-199 XP), Level 3 (200-449 XP), etc.
+- Automatic level progression based on XP (see Level System section below)
+- Uses configurable exponential curve
+- Supports multiple level-ups in single XP grant
+- Records level-up events in ActivityLog with dedicated reason code
 
 #### API Reference
 
@@ -643,6 +644,396 @@ When tasks are synced from offline mode, the XP awarding service will:
 4. Apply the same rules and multipliers as online completions
 
 This ensures users get credit for offline work without XP inflation.
+
+## Level System
+
+The level system provides a structured progression curve that rewards users for accumulating XP. It's designed to be configurable, performant, and transparent.
+
+### Overview
+
+Users start at level 1 and progress through levels by earning XP. The system uses an exponential progression curve that can be tuned via configuration without code changes.
+
+**Key Features:**
+- Exponential XP curve (configurable)
+- Precomputed lookup table for levels 1-100
+- Automatic level-up detection
+- Activity logging for each level-up
+- Event emission for downstream processing
+- Support for multiple level-ups per XP grant
+- Next level threshold tracking
+
+### Progression Curve
+
+The level system uses a configurable exponential formula:
+
+```
+XP Required = (level - 1)^exponent × baseXp
+```
+
+**Default Configuration (exponent=2.0, baseXp=50):**
+
+| Level | XP Required | XP for Next Level | XP to Level Up |
+|-------|-------------|-------------------|----------------|
+| 1     | 0           | 50                | 50             |
+| 2     | 50          | 200               | 150            |
+| 3     | 200         | 450               | 250            |
+| 4     | 450         | 800               | 350            |
+| 5     | 800         | 1,250             | 450            |
+| 10    | 4,050       | 5,000             | 950            |
+| 20    | 18,050      | 20,000            | 1,950          |
+| 50    | 120,050     | 122,500           | 2,450          |
+| 100   | 490,050     | 495,000           | 4,950          |
+
+### Configuration
+
+Level progression is configured in `lib/gamification/config.ts`:
+
+```typescript
+export const LEVEL_PROGRESSION = {
+  BASE_XP: 50,        // Base XP multiplier
+  EXPONENT: 2.0,      // Curve exponent (2.0 = quadratic)
+  MAX_PRECOMPUTED_LEVEL: 100, // Levels to precompute
+};
+```
+
+**Tuning the Curve:**
+
+- **BASE_XP**: Higher values make leveling slower overall
+  - `25` = Faster progression (2x faster)
+  - `50` = Default (balanced)
+  - `100` = Slower progression (2x slower)
+
+- **EXPONENT**: Controls curve steepness
+  - `1.5` = Sub-quadratic (more linear, easier to reach high levels)
+  - `2.0` = Quadratic (recommended, balanced)
+  - `2.5` = Super-quadratic (steeper, harder to reach high levels)
+
+**Example Configurations:**
+
+```typescript
+// Fast progression (casual players)
+BASE_XP: 25, EXPONENT: 1.5
+
+// Default (balanced)
+BASE_XP: 50, EXPONENT: 2.0
+
+// Slow progression (hardcore players)
+BASE_XP: 100, EXPONENT: 2.5
+```
+
+### API Reference
+
+#### `xpRequiredForLevel(level: number): number`
+
+Calculate XP required to reach a specific level.
+
+```typescript
+import { xpRequiredForLevel } from '@/lib/gamification';
+
+xpRequiredForLevel(1);  // 0
+xpRequiredForLevel(2);  // 50
+xpRequiredForLevel(5);  // 800
+xpRequiredForLevel(10); // 4,050
+```
+
+#### `nextLevelThreshold(currentXp: number): number`
+
+Get XP required for the next level given current XP.
+
+```typescript
+import { nextLevelThreshold } from '@/lib/gamification';
+
+nextLevelThreshold(0);    // 50 (need 50 XP for level 2)
+nextLevelThreshold(50);   // 200 (need 200 XP for level 3)
+nextLevelThreshold(100);  // 200 (still level 2, need 200 XP for level 3)
+```
+
+#### `calculateLevelFromXp(xp: number): number`
+
+Calculate current level from total XP.
+
+```typescript
+import { calculateLevelFromXp } from '@/lib/gamification/levels';
+
+calculateLevelFromXp(0);    // 1
+calculateLevelFromXp(50);   // 2
+calculateLevelFromXp(200);  // 3
+calculateLevelFromXp(4050); // 10
+```
+
+#### `getLevelInfo(currentXp: number): LevelInfo`
+
+Get detailed level information including thresholds.
+
+```typescript
+import { getLevelInfo } from '@/lib/gamification';
+
+const info = getLevelInfo(100);
+// {
+//   level: 2,
+//   xpRequired: 50,
+//   xpForNextLevel: 200
+// }
+```
+
+#### `getLevelInfoFast(currentXp: number): LevelInfo`
+
+Fast lookup using precomputed table (levels 1-100). Falls back to calculation for higher levels.
+
+```typescript
+import { getLevelInfoFast } from '@/lib/gamification';
+
+// Uses lookup table (faster)
+const info = getLevelInfoFast(100);
+
+// Calculates on-demand (still fast)
+const highLevelInfo = getLevelInfoFast(1000000);
+```
+
+#### `calculateLevelsCrossed(oldXp: number, newXp: number): number[]`
+
+Calculate all levels crossed between two XP values.
+
+```typescript
+import { calculateLevelsCrossed } from '@/lib/gamification';
+
+calculateLevelsCrossed(0, 50);   // [2]
+calculateLevelsCrossed(0, 450);  // [2, 3, 4]
+calculateLevelsCrossed(50, 199); // [] (no level-up)
+```
+
+#### `applyLevelChanges(user: any, gainedXp: number): Promise<LevelUpInfo[]>`
+
+Apply level changes after XP gain. Handles level-up detection, user updates, logging, and events.
+
+```typescript
+import { applyLevelChanges } from '@/lib/gamification';
+
+// After awarding XP
+const levelUps = await applyLevelChanges(user, xpGained);
+
+for (const levelUp of levelUps) {
+  console.log(`Leveled up from ${levelUp.oldLevel} to ${levelUp.newLevel}`);
+  console.log(`Unlocked: ${levelUp.unlockedRewards.join(', ')}`);
+}
+```
+
+**What it does:**
+1. Calculates levels crossed
+2. Updates `user.level`
+3. Updates `user.preferences.nextLevelAt`
+4. Creates `ActivityLog` entries with `activityType: "level_up"`
+5. Emits `levelUp` events for each level gained
+6. Returns array of `LevelUpInfo` objects
+
+**ActivityLog Entry:**
+```typescript
+{
+  userId: "user123",
+  activityType: "level_up",
+  xpEarned: 0, // No XP earned from leveling itself
+  date: Date,
+  metadata: {
+    oldLevel: 1,
+    newLevel: 2,
+    totalXp: 60,
+    xpForNextLevel: 200
+  }
+}
+```
+
+#### `LEVEL_LOOKUP_TABLE: ReadonlyArray<LevelInfo>`
+
+Precomputed lookup table for levels 1-100.
+
+```typescript
+import { LEVEL_LOOKUP_TABLE } from '@/lib/gamification';
+
+// Access directly for maximum performance
+const level5Info = LEVEL_LOOKUP_TABLE[4]; // 0-indexed
+console.log(level5Info);
+// {
+//   level: 5,
+//   xpRequired: 800,
+//   xpForNextLevel: 1250
+// }
+```
+
+### Usage Examples
+
+#### Display Level Progress
+
+```typescript
+import { getLevelInfo } from '@/lib/gamification';
+
+function LevelProgress({ user }: { user: IUser }) {
+  const info = getLevelInfo(user.xp);
+  const progress = (user.xp - info.xpRequired) / (info.xpForNextLevel - info.xpRequired);
+  
+  return (
+    <div>
+      <h3>Level {info.level}</h3>
+      <ProgressBar value={progress * 100} />
+      <p>{user.xp} / {info.xpForNextLevel} XP</p>
+    </div>
+  );
+}
+```
+
+#### Check for Level-Up
+
+```typescript
+import { calculateLevelsCrossed } from '@/lib/gamification';
+
+const oldXp = user.xp;
+await awardXpForTaskCompletion(taskId, userId);
+await user.reload(); // Refresh from DB
+const newXp = user.xp;
+
+const levelsCrossed = calculateLevelsCrossed(oldXp, newXp);
+if (levelsCrossed.length > 0) {
+  console.log(`Level up! Now level ${levelsCrossed[levelsCrossed.length - 1]}`);
+}
+```
+
+#### Award Large XP Grants
+
+```typescript
+// Large XP grant (e.g., from achievement unlock)
+const oldLevel = user.level;
+user.xp += 1000; // Add 1000 XP
+
+const levelUps = await applyLevelChanges(user, 1000);
+await user.save();
+
+// levelUps contains info for each level gained
+console.log(`Gained ${levelUps.length} levels!`);
+for (const levelUp of levelUps) {
+  // Send notification, unlock rewards, etc.
+  sendLevelUpNotification(user, levelUp);
+}
+```
+
+### Level-Up Events
+
+Each level-up emits an event through the shared event bus:
+
+```typescript
+import { gamificationEvents, GAMIFICATION_EVENTS } from '@/lib/gamification';
+
+gamificationEvents.on(GAMIFICATION_EVENTS.LEVEL_UP, (event) => {
+  console.log('Level up event:', event);
+  // {
+  //   userId: "user123",
+  //   oldLevel: 1,
+  //   newLevel: 2,
+  //   totalXp: 60,
+  //   timestamp: Date
+  // }
+  
+  // Send push notification
+  sendNotification(event.userId, {
+    title: `Level ${event.newLevel} Reached!`,
+    body: `You've reached level ${event.newLevel}. Keep up the great work!`,
+  });
+  
+  // Unlock level-based rewards
+  if (event.newLevel === 5) {
+    unlockTheme(event.userId, "midnight");
+  }
+  
+  // Update leaderboards
+  updateLeaderboard(event.userId);
+});
+```
+
+### Multiple Level-Ups
+
+The system correctly handles scenarios where a user gains enough XP to skip multiple levels:
+
+```typescript
+// User at level 1 (0 XP) completes a hard task with bonuses
+// and gains 500 XP, jumping to level 4
+
+// The system will:
+// 1. Detect levels 2, 3, and 4 were crossed
+// 2. Create 3 separate ActivityLog entries (one per level)
+// 3. Emit 3 separate level-up events
+// 4. Update user.level to 4
+// 5. Set user.preferences.nextLevelAt to 800 (level 5 threshold)
+
+const user = await User.findById(userId);
+user.xp = 0;
+
+// Award 500 XP
+user.xp += 500;
+const levelUps = await applyLevelChanges(user, 500);
+
+console.log(levelUps);
+// [
+//   { oldLevel: 1, newLevel: 2, totalXp: 500, unlockedRewards: [] },
+//   { oldLevel: 2, newLevel: 3, totalXp: 500, unlockedRewards: [] },
+//   { oldLevel: 3, newLevel: 4, totalXp: 500, unlockedRewards: [] }
+// ]
+```
+
+Each level-up is tracked individually, ensuring accurate analytics and reward distribution.
+
+### Boundary Cases
+
+The level system handles edge cases correctly:
+
+**Exact Threshold:**
+```typescript
+calculateLevelFromXp(50);  // 2 (exactly at threshold)
+calculateLevelFromXp(200); // 3 (exactly at threshold)
+```
+
+**Just Below Threshold:**
+```typescript
+calculateLevelFromXp(49);  // 1 (one XP away from level 2)
+calculateLevelFromXp(199); // 2 (one XP away from level 3)
+```
+
+**Overshoot:**
+```typescript
+calculateLevelsCrossed(49, 201); // [2, 3] (skips through level 2 to 3)
+```
+
+**Level Down (XP Removal):**
+```typescript
+// If user loses XP (e.g., task reopened)
+const oldXp = 250; // Level 3
+const newXp = 100; // Level 2
+calculateLevelsCrossed(oldXp, newXp); // [] (returns empty for level decrease)
+```
+
+### Performance
+
+- **Precomputed Table**: Levels 1-100 are precomputed at module load for O(1) lookup
+- **Calculation**: Higher levels calculated on-demand using efficient formula
+- **Lookup Complexity**: O(1) for levels 1-100, O(1) for calculation
+- **Memory**: ~10KB for lookup table (100 levels × ~100 bytes per entry)
+
+### Testing
+
+Run level system tests:
+
+```bash
+npm test -- levels.test.ts
+```
+
+Tests cover:
+- XP threshold calculations
+- Level calculations from XP
+- Next level threshold lookups
+- Boundary cases (exact threshold, overshoot, just below)
+- Multiple level-up scenarios
+- Large XP grants
+- Configuration flexibility
+- Precomputed lookup table
+- Level-up event emission
+- ActivityLog entry creation
 
 ## Future Enhancements
 

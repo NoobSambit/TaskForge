@@ -7,6 +7,7 @@
 
 import { calculateXp, normalizeTaskData } from "./xpEngine";
 import { gamificationEvents } from "./events";
+import { applyLevelChanges } from "./levels";
 import type { UserContext, XpCalculationOptions } from "./types";
 
 /**
@@ -39,6 +40,8 @@ export interface AwardXpResult {
  * And so on...
  * 
  * Formula: level = floor(sqrt(xp / 50)) + 1
+ * 
+ * @deprecated Use calculateLevelFromXp from './levels' instead
  */
 export function calculateLevelFromXp(xp: number): number {
   if (xp < 0) return 1;
@@ -175,9 +178,6 @@ export async function awardXpForTaskCompletion(
       };
     }
 
-    // Calculate old level before update
-    const oldLevel = user.level;
-
     // Atomically update user XP using $inc
     const updatedUser = await User.findByIdAndUpdate(
       userId,
@@ -198,23 +198,13 @@ export async function awardXpForTaskCompletion(
       };
     }
 
-    // Calculate new level
-    const newLevel = calculateLevelFromXp(updatedUser.xp);
-
-    // Update level if it changed
-    if (newLevel !== updatedUser.level) {
-      updatedUser.level = newLevel;
-      await updatedUser.save();
-
-      // Emit level up event
-      gamificationEvents.emitLevelUp({
-        userId: updatedUser._id.toString(),
-        oldLevel,
-        newLevel,
-        totalXp: updatedUser.xp,
-        timestamp: new Date(),
-      });
-    }
+    // Apply level changes (handles level-up detection, logging, and events)
+    await applyLevelChanges(updatedUser, computation.delta);
+    
+    // Save user with updated level and preferences
+    await updatedUser.save();
+    
+    const newLevel = updatedUser.level;
 
     // Create activity log entry
     await ActivityLog.create({
@@ -342,17 +332,15 @@ export async function adjustXpForTaskReopen(
     // Ensure XP doesn't go negative
     if (updatedUser.xp < 0) {
       updatedUser.xp = 0;
-      await updatedUser.save();
     }
 
-    // Calculate new level
-    const newLevel = calculateLevelFromXp(updatedUser.xp);
-
-    // Update level if it changed
-    if (newLevel !== updatedUser.level) {
-      updatedUser.level = newLevel;
-      await updatedUser.save();
-    }
+    // Apply level changes (will handle level down if XP decreased)
+    await applyLevelChanges(updatedUser, -xpToRemove);
+    
+    // Save user with updated level and preferences
+    await updatedUser.save();
+    
+    const newLevel = updatedUser.level;
 
     // Delete the original activity log
     await ActivityLog.deleteOne({ _id: originalLog._id });

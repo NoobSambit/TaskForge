@@ -4,6 +4,7 @@ export interface IGamificationPreferences {
   leaderboardOptIn: boolean;
   anonymousMode: boolean;
   timezone?: string;
+  nextLevelAt?: number;
 }
 
 export interface IUser {
@@ -43,6 +44,7 @@ const UserSchema = new Schema<IUser>(
         leaderboardOptIn: { type: Boolean, default: true, index: true },
         anonymousMode: { type: Boolean, default: false },
         timezone: { type: String },
+        nextLevelAt: { type: Number },
       },
       default: () => ({
         leaderboardOptIn: true,

@@ -167,3 +167,41 @@ export const DUPLICATE_COMPLETION = {
    */
   RECOMPLETE_COOLDOWN_HOURS: 24,
 };
+
+/**
+ * Level progression configuration.
+ * Controls how XP translates into levels using an exponential curve.
+ * 
+ * Formula: xp = (level - 1)^exponent * baseXp
+ * Inverse: level = floor(xp / baseXp)^(1/exponent) + 1
+ */
+export const LEVEL_PROGRESSION = {
+  /**
+   * Base XP required for leveling calculations.
+   * With exponent=2 and baseXp=50:
+   * - Level 1: 0 XP
+   * - Level 2: 50 XP
+   * - Level 3: 200 XP
+   * - Level 4: 450 XP
+   * - Level 5: 800 XP
+   * - Level 10: 4,050 XP
+   * - Level 20: 18,050 XP
+   * - Level 50: 120,050 XP
+   * - Level 100: 490,050 XP
+   */
+  BASE_XP: 50,
+
+  /**
+   * Exponent for the progression curve.
+   * 2.0 = quadratic (gentle curve, recommended)
+   * 1.5 = sub-quadratic (more linear)
+   * 2.5 = super-quadratic (steeper curve)
+   */
+  EXPONENT: 2.0,
+
+  /**
+   * Maximum level to precompute for lookup table.
+   * Levels beyond this will be calculated on-demand.
+   */
+  MAX_PRECOMPUTED_LEVEL: 100,
+};
