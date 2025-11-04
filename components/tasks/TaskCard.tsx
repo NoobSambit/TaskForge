@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import CompleteTaskButton from "./CompleteTaskButton";
 import DeleteTaskButton from "./DeleteTaskButton";
 import { useOfflineTasks } from "@/hooks/useOfflineTasks";
@@ -72,7 +73,26 @@ export default function TaskCard({ task }: { task: Task }) {
             )}
           </div>
         </div>
-        <div className="mt-1 text-xs text-muted-foreground">{statusLabel}</div>
+        <div className="mt-1 flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-muted-foreground">{statusLabel}</span>
+          <Badge variant="outline" className="text-xs capitalize">
+            {task.difficulty}
+          </Badge>
+        </div>
+        {task.tags && task.tags.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {task.tags.slice(0, 3).map((tag) => (
+              <Badge key={tag} variant="secondary" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+            {task.tags.length > 3 && (
+              <Badge variant="secondary" className="text-xs">
+                +{task.tags.length - 3}
+              </Badge>
+            )}
+          </div>
+        )}
       </CardHeader>
       {task.description ? (
         <CardContent className="pt-0">
