@@ -1,0 +1,444 @@
+[
+  {
+    "key": "first_task",
+    "name": "Getting Started",
+    "description": "Complete your first task",
+    "icon": "🎯",
+    "category": "tasks",
+    "xpReward": 10,
+    "rarity": "common",
+    "criteria": {
+      "type": "task_complete",
+      "target": 1
+    }
+  },
+  {
+    "key": "task_5",
+    "name": "Task Warrior",
+    "description": "Complete 5 tasks",
+    "icon": "⚔️",
+    "category": "tasks",
+    "xpReward": 25,
+    "rarity": "common",
+    "criteria": {
+      "type": "task_complete",
+      "target": 5
+    }
+  },
+  {
+    "key": "task_10",
+    "name": "Productive",
+    "description": "Complete 10 tasks",
+    "icon": "📈",
+    "category": "tasks",
+    "xpReward": 50,
+    "rarity": "common",
+    "criteria": {
+      "type": "task_complete",
+      "target": 10
+    }
+  },
+  {
+    "key": "task_25",
+    "name": "Task Master",
+    "description": "Complete 25 tasks",
+    "icon": "🏆",
+    "category": "tasks",
+    "xpReward": 100,
+    "rarity": "rare",
+    "criteria": {
+      "type": "task_complete",
+      "target": 25
+    }
+  },
+  {
+    "key": "task_50",
+    "name": "Task Legend",
+    "description": "Complete 50 tasks",
+    "icon": "👑",
+    "category": "tasks",
+    "xpReward": 200,
+    "rarity": "rare",
+    "themeUnlock": "royal",
+    "criteria": {
+      "type": "task_complete",
+      "target": 50
+    }
+  },
+  {
+    "key": "task_100",
+    "name": "Centurion",
+    "description": "Complete 100 tasks",
+    "icon": "💯",
+    "category": "tasks",
+    "xpReward": 500,
+    "rarity": "epic",
+    "themeUnlock": "gold",
+    "criteria": {
+      "type": "task_complete",
+      "target": 100
+    }
+  },
+  {
+    "key": "task_250",
+    "name": "Task Titan",
+    "description": "Complete 250 tasks",
+    "icon": "⚡",
+    "category": "tasks",
+    "xpReward": 1000,
+    "rarity": "epic",
+    "themeUnlock": "lightning",
+    "criteria": {
+      "type": "task_complete",
+      "target": 250
+    }
+  },
+  {
+    "key": "task_500",
+    "name": "Task God",
+    "description": "Complete 500 tasks",
+    "icon": "🌟",
+    "category": "tasks",
+    "xpReward": 2500,
+    "rarity": "legendary",
+    "themeUnlock": "cosmic",
+    "criteria": {
+      "type": "task_complete",
+      "target": 500
+    }
+  },
+  {
+    "key": "streak_3",
+    "name": "Consistency",
+    "description": "Maintain a 3-day streak",
+    "icon": "🔥",
+    "category": "streaks",
+    "xpReward": 30,
+    "rarity": "common",
+    "criteria": {
+      "type": "streak",
+      "target": 3
+    }
+  },
+  {
+    "key": "streak_7",
+    "name": "Week Warrior",
+    "description": "Maintain a 7-day streak",
+    "icon": "📅",
+    "category": "streaks",
+    "xpReward": 75,
+    "rarity": "common",
+    "criteria": {
+      "type": "streak",
+      "target": 7
+    }
+  },
+  {
+    "key": "streak_14",
+    "name": "Two Weeks Strong",
+    "description": "Maintain a 14-day streak",
+    "icon": "💪",
+    "category": "streaks",
+    "xpReward": 150,
+    "rarity": "rare",
+    "criteria": {
+      "type": "streak",
+      "target": 14
+    }
+  },
+  {
+    "key": "streak_30",
+    "name": "Monthly Dedication",
+    "description": "Maintain a 30-day streak",
+    "icon": "🎖️",
+    "category": "streaks",
+    "xpReward": 300,
+    "rarity": "rare",
+    "themeUnlock": "fire",
+    "criteria": {
+      "type": "streak",
+      "target": 30
+    }
+  },
+  {
+    "key": "streak_60",
+    "name": "Unstoppable",
+    "description": "Maintain a 60-day streak",
+    "icon": "🚀",
+    "category": "streaks",
+    "xpReward": 750,
+    "rarity": "epic",
+    "themeUnlock": "inferno",
+    "criteria": {
+      "type": "streak",
+      "target": 60
+    }
+  },
+  {
+    "key": "streak_100",
+    "name": "Streak Legend",
+    "description": "Maintain a 100-day streak",
+    "icon": "🌋",
+    "category": "streaks",
+    "xpReward": 1500,
+    "rarity": "legendary",
+    "themeUnlock": "phoenix",
+    "criteria": {
+      "type": "streak",
+      "target": 100
+    }
+  },
+  {
+    "key": "early_bird",
+    "name": "Early Bird",
+    "description": "Complete a task before 8 AM",
+    "icon": "🌅",
+    "category": "time",
+    "xpReward": 20,
+    "rarity": "common",
+    "criteria": {
+      "type": "time_based",
+      "condition": "before_8am"
+    }
+  },
+  {
+    "key": "night_owl",
+    "name": "Night Owl",
+    "description": "Complete a task after 10 PM",
+    "icon": "🦉",
+    "category": "time",
+    "xpReward": 20,
+    "rarity": "common",
+    "criteria": {
+      "type": "time_based",
+      "condition": "after_10pm"
+    }
+  },
+  {
+    "key": "weekend_warrior",
+    "name": "Weekend Warrior",
+    "description": "Complete tasks on both Saturday and Sunday",
+    "icon": "🏖️",
+    "category": "time",
+    "xpReward": 40,
+    "rarity": "rare",
+    "criteria": {
+      "type": "time_based",
+      "condition": "weekend_both_days"
+    }
+  },
+  {
+    "key": "priority_master",
+    "name": "Priority Master",
+    "description": "Complete 10 high-priority tasks",
+    "icon": "⭐",
+    "category": "priority",
+    "xpReward": 60,
+    "rarity": "common",
+    "criteria": {
+      "type": "priority_task",
+      "target": 10,
+      "priority": 5
+    }
+  },
+  {
+    "key": "focus_mode",
+    "name": "Focus Mode",
+    "description": "Complete 5 tasks in one day",
+    "icon": "🎯",
+    "category": "daily",
+    "xpReward": 50,
+    "rarity": "common",
+    "criteria": {
+      "type": "daily_tasks",
+      "target": 5
+    }
+  },
+  {
+    "key": "super_productive",
+    "name": "Super Productive",
+    "description": "Complete 10 tasks in one day",
+    "icon": "💥",
+    "category": "daily",
+    "xpReward": 100,
+    "rarity": "rare",
+    "criteria": {
+      "type": "daily_tasks",
+      "target": 10
+    }
+  },
+  {
+    "key": "speed_demon",
+    "name": "Speed Demon",
+    "description": "Complete 3 tasks within 1 hour",
+    "icon": "⚡",
+    "category": "speed",
+    "xpReward": 75,
+    "rarity": "rare",
+    "criteria": {
+      "type": "speed_complete",
+      "target": 3,
+      "timeWindow": 3600
+    }
+  },
+  {
+    "key": "organized",
+    "name": "Organized",
+    "description": "Create 20 tasks",
+    "icon": "📋",
+    "category": "creation",
+    "xpReward": 30,
+    "rarity": "common",
+    "criteria": {
+      "type": "task_create",
+      "target": 20
+    }
+  },
+  {
+    "key": "planner",
+    "name": "Master Planner",
+    "description": "Create 50 tasks",
+    "icon": "📝",
+    "category": "creation",
+    "xpReward": 80,
+    "rarity": "rare",
+    "criteria": {
+      "type": "task_create",
+      "target": 50
+    }
+  },
+  {
+    "key": "level_5",
+    "name": "Rising Star",
+    "description": "Reach level 5",
+    "icon": "✨",
+    "category": "progression",
+    "xpReward": 50,
+    "rarity": "common",
+    "criteria": {
+      "type": "level_reach",
+      "target": 5
+    }
+  },
+  {
+    "key": "level_10",
+    "name": "Experienced",
+    "description": "Reach level 10",
+    "icon": "🎓",
+    "category": "progression",
+    "xpReward": 100,
+    "rarity": "rare",
+    "themeUnlock": "scholar",
+    "criteria": {
+      "type": "level_reach",
+      "target": 10
+    }
+  },
+  {
+    "key": "level_25",
+    "name": "Expert",
+    "description": "Reach level 25",
+    "icon": "🏅",
+    "category": "progression",
+    "xpReward": 250,
+    "rarity": "epic",
+    "themeUnlock": "champion",
+    "criteria": {
+      "type": "level_reach",
+      "target": 25
+    }
+  },
+  {
+    "key": "level_50",
+    "name": "Master",
+    "description": "Reach level 50",
+    "icon": "💎",
+    "category": "progression",
+    "xpReward": 500,
+    "rarity": "legendary",
+    "themeUnlock": "diamond",
+    "criteria": {
+      "type": "level_reach",
+      "target": 50
+    }
+  },
+  {
+    "key": "perfectionist",
+    "name": "Perfectionist",
+    "description": "Complete all tasks for 3 consecutive days",
+    "icon": "✅",
+    "category": "completion",
+    "xpReward": 100,
+    "rarity": "rare",
+    "criteria": {
+      "type": "all_tasks_complete",
+      "target": 3
+    }
+  },
+  {
+    "key": "comeback",
+    "name": "Comeback King",
+    "description": "Restore a streak after losing it",
+    "icon": "🔄",
+    "category": "streaks",
+    "xpReward": 50,
+    "rarity": "common",
+    "criteria": {
+      "type": "streak_restore"
+    }
+  },
+  {
+    "key": "theme_collector",
+    "name": "Theme Collector",
+    "description": "Unlock 5 different themes",
+    "icon": "🎨",
+    "category": "customization",
+    "xpReward": 150,
+    "rarity": "rare",
+    "criteria": {
+      "type": "themes_unlock",
+      "target": 5
+    }
+  },
+  {
+    "key": "completionist",
+    "name": "Completionist",
+    "description": "Unlock 10 achievements",
+    "icon": "🌠",
+    "category": "meta",
+    "xpReward": 200,
+    "rarity": "epic",
+    "criteria": {
+      "type": "achievements_unlock",
+      "target": 10
+    }
+  },
+  {
+    "key": "achievement_hunter",
+    "name": "Achievement Hunter",
+    "description": "Unlock 20 achievements",
+    "icon": "🏹",
+    "category": "meta",
+    "xpReward": 500,
+    "rarity": "epic",
+    "themeUnlock": "hunter",
+    "criteria": {
+      "type": "achievements_unlock",
+      "target": 20
+    }
+  },
+  {
+    "key": "platinum",
+    "name": "Platinum Trophy",
+    "description": "Unlock all achievements",
+    "icon": "🏆",
+    "category": "meta",
+    "xpReward": 5000,
+    "rarity": "legendary",
+    "themeUnlock": "platinum",
+    "criteria": {
+      "type": "achievements_unlock",
+      "target": 32
+    }
+  }
+]

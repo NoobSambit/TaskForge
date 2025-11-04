@@ -24,6 +24,23 @@ export type User = {
   _id: string;
   name: string;
   email: string;
+  xp: number;
+  level: number;
+  currentStreak: number;
+  longestStreak: number;
+  theme: string;
+  unlockedThemes: string[];
+  lastActiveAt?: string;
+  lastStreakDate?: string;
+  xpMultiplier: number;
+  preferences: {
+    leaderboardOptIn: boolean;
+    anonymousMode: boolean;
+    timezone?: string;
+  };
   createdAt?: string;
   updatedAt?: string;
 };
+
+// Export gamification types
+export * from "./gamification";
