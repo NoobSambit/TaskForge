@@ -8,6 +8,7 @@
 import { calculateXp, normalizeTaskData } from "./xpEngine";
 import { gamificationEvents } from "./events";
 import { applyLevelChanges } from "./levels";
+import { applyCompletionToStreak } from "./streaks";
 import type { UserContext, XpCalculationOptions } from "./types";
 
 /**
@@ -146,7 +147,13 @@ export async function awardXpForTaskCompletion(
       };
     }
 
-    // Build user context for XP calculation
+    // Apply completion to streak BEFORE calculating XP
+    // This ensures the streak multiplier is up-to-date for XP calculation
+    await applyCompletionToStreak(user, task.completedAt);
+    // Save user with updated streak (applyCompletionToStreak updates user in-place)
+    await user.save();
+
+    // Build user context for XP calculation (with updated streak)
     const userContext: UserContext = {
       userId: user._id.toString(),
       xpMultiplier: user.xpMultiplier,

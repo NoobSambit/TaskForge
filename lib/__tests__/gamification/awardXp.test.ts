@@ -35,6 +35,12 @@ vi.mock("../../../models/ActivityLog", () => ({
   },
 }));
 
+vi.mock("../../../models/StreakLog", () => ({
+  default: {
+    findOneAndUpdate: vi.fn(),
+  },
+}));
+
 describe("calculateLevelFromXp", () => {
   it("should calculate level 1 for 0 XP", () => {
     expect(calculateLevelFromXp(0)).toBe(1);
@@ -73,6 +79,7 @@ describe("awardXpForTaskCompletion", () => {
     const { default: Task } = await import("../../../models/Task");
     const { default: User } = await import("../../../models/User");
     const { default: ActivityLog } = await import("../../../models/ActivityLog");
+    const { default: StreakLog } = await import("../../../models/StreakLog");
 
     const mockTask = {
       _id: mockTaskId,
@@ -92,6 +99,7 @@ describe("awardXpForTaskCompletion", () => {
       level: 2,
       xpMultiplier: 1.0,
       currentStreak: 0,
+      preferences: {},
       save: vi.fn().mockResolvedValue(true),
     };
 
@@ -108,6 +116,7 @@ describe("awardXpForTaskCompletion", () => {
     vi.mocked(ActivityLog.findOne).mockResolvedValue(null); // No duplicate
     vi.mocked(User.findByIdAndUpdate).mockResolvedValue(mockUpdatedUser as any);
     vi.mocked(ActivityLog.create).mockResolvedValue({} as any);
+    vi.mocked(StreakLog.findOneAndUpdate).mockResolvedValue({ taskCount: 1, streakLength: 1 } as any);
 
     // Listen for events
     const xpAwardedSpy = vi.fn();
@@ -230,6 +239,7 @@ describe("awardXpForTaskCompletion", () => {
     const { default: Task } = await import("../../../models/Task");
     const { default: User } = await import("../../../models/User");
     const { default: ActivityLog } = await import("../../../models/ActivityLog");
+    const { default: StreakLog } = await import("../../../models/StreakLog");
 
     const mockTask = {
       _id: mockTaskId,
@@ -249,6 +259,7 @@ describe("awardXpForTaskCompletion", () => {
       level: 1,
       xpMultiplier: 1.0,
       currentStreak: 0,
+      preferences: {},
       save: vi.fn().mockResolvedValue(true),
     };
 
@@ -264,6 +275,7 @@ describe("awardXpForTaskCompletion", () => {
     vi.mocked(ActivityLog.findOne).mockResolvedValue(null);
     vi.mocked(User.findByIdAndUpdate).mockResolvedValue(mockUpdatedUser as any);
     vi.mocked(ActivityLog.create).mockResolvedValue({} as any);
+    vi.mocked(StreakLog.findOneAndUpdate).mockResolvedValue({ taskCount: 1, streakLength: 1 } as any);
 
     // Listen for level up event
     const levelUpSpy = vi.fn();
@@ -282,6 +294,7 @@ describe("awardXpForTaskCompletion", () => {
     const { default: Task } = await import("../../../models/Task");
     const { default: User } = await import("../../../models/User");
     const { default: ActivityLog } = await import("../../../models/ActivityLog");
+    const { default: StreakLog } = await import("../../../models/StreakLog");
 
     const mockTask = {
       _id: mockTaskId,
@@ -301,11 +314,14 @@ describe("awardXpForTaskCompletion", () => {
       level: 2,
       xpMultiplier: 1.0,
       currentStreak: 0,
+      preferences: {},
+      save: vi.fn().mockResolvedValue(true),
     };
 
     vi.mocked(Task.findById).mockResolvedValue(mockTask as any);
     vi.mocked(User.findById).mockResolvedValue(mockUser as any);
     vi.mocked(ActivityLog.findOne).mockResolvedValue(null);
+    vi.mocked(StreakLog.findOneAndUpdate).mockResolvedValue({ taskCount: 1, streakLength: 1 } as any);
     
     const updatedUser = {
       _id: mockUserId,
