@@ -28,6 +28,8 @@ if (!MONGODB_URI) {
   console.error("❌ Error: MONGODB_URI environment variable is required");
   process.exit(1);
 }
+// Type assertion after validation
+const mongoUri: string = MONGODB_URI;
 
 /**
  * Main backfill function
@@ -43,7 +45,7 @@ async function backfillStreaks() {
 
   try {
     // Connect to MongoDB
-    await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(mongoUri);
     console.log("✅ Connected to MongoDB");
 
     // Import models

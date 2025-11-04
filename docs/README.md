@@ -13,6 +13,13 @@ This directory contains comprehensive documentation for the application's featur
   - Migration and seeding scripts
   - TypeScript type definitions
 
+- **[Streak Tracking System](./STREAKS.md)** - Daily streak tracking with timezone awareness
+  - Consecutive day tracking with timezone support
+  - DST transition handling
+  - Streak multipliers for XP calculation
+  - Historical data backfilling
+  - Comprehensive testing
+
 ### Offline & Sync
 
 - **[Offline-First Architecture & QA Guide](./offline-testing.md)** - Comprehensive guide to the offline-first architecture
@@ -62,7 +69,16 @@ This directory contains comprehensive documentation for the application's featur
    npm run seed:achievements
    ```
 
-5. **Start development server:**
+5. **Backfill streaks (optional):**
+   ```bash
+   # Dry run to preview streak recomputation
+   npm run backfill:streaks:dry-run
+   
+   # Execute backfill for all users
+   npm run backfill:streaks
+   ```
+
+6. **Start development server:**
    ```bash
    npm run dev
    ```
