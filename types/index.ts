@@ -2,6 +2,7 @@
 
 // Keep in sync with models/Task.ts TaskStatus union and API layer
 export type TaskStatus = "todo" | "in_progress" | "done";
+export type TaskDifficulty = "easy" | "medium" | "hard";
 
 // JSON shape returned by our Tasks API (Mongoose document serialized to JSON)
 export type Task = {
@@ -11,6 +12,9 @@ export type Task = {
   description?: string | null;
   status: TaskStatus;
   priority: number; // 1..5
+  difficulty: TaskDifficulty;
+  tags: string[];
+  completedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
 };

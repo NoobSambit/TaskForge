@@ -18,6 +18,8 @@ export type TaskFormValues = {
   description?: string;
   status: "todo" | "in_progress" | "done";
   priority: number;
+  difficulty: "easy" | "medium" | "hard";
+  tags: string[];
 };
 
 type ZodErrorFlatten = {
@@ -51,6 +53,8 @@ export default function TaskForm({
     description: "",
     status: "todo",
     priority: 3,
+    difficulty: "medium",
+    tags: [],
   });
 
   const [smartInputValue, setSmartInputValue] = useState("");
@@ -59,6 +63,8 @@ export default function TaskForm({
   const [errors, setErrors] = useState<ZodErrorFlatten>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
 
+  const [tagInput, setTagInput] = useState("");
+
   useEffect(() => {
     if (initialValues) {
       setValues((prev) => ({
@@ -66,6 +72,8 @@ export default function TaskForm({
         ...initialValues,
         priority: Number(initialValues.priority ?? prev.priority),
         status: (initialValues.status as any) ?? prev.status,
+        difficulty: (initialValues.difficulty as any) ?? prev.difficulty,
+        tags: Array.isArray(initialValues.tags) ? initialValues.tags : prev.tags,
       }));
     }
   }, [initialValues]);
@@ -74,7 +82,28 @@ export default function TaskForm({
   const descError = errors.fieldErrors?.description?.[0];
   const statusError = errors.fieldErrors?.status?.[0];
   const priorityError = errors.fieldErrors?.priority?.[0];
+  const difficultyError = errors.fieldErrors?.difficulty?.[0];
+  const tagsError = errors.fieldErrors?.tags?.[0];
   const formError = useMemo(() => errors.formErrors?.[0] ?? generalError, [errors.formErrors, generalError]);
+
+  const handleAddTag = () => {
+    const trimmed = tagInput.trim();
+    if (trimmed && !values.tags.includes(trimmed) && values.tags.length < 20) {
+      setValues((v) => ({ ...v, tags: [...v.tags, trimmed] }));
+      setTagInput("");
+    }
+  };
+
+  const handleRemoveTag = (tag: string) => {
+    setValues((v) => ({ ...v, tags: v.tags.filter((t) => t !== tag) }));
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddTag();
+    }
+  };
 
   function update<K extends keyof TaskFormValues>(key: K, value: TaskFormValues[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -132,6 +161,8 @@ export default function TaskForm({
           description: values.description,
           status: values.status,
           priority: values.priority,
+          difficulty: values.difficulty,
+          tags: values.tags,
           userId: "", // Will be set by the API
         });
 
@@ -150,6 +181,8 @@ export default function TaskForm({
           description: values.description,
           status: values.status,
           priority: values.priority,
+          difficulty: values.difficulty,
+          tags: values.tags,
         });
 
         // Only navigate when online to avoid crashes
@@ -231,7 +264,7 @@ export default function TaskForm({
         {descError ? <p className="text-xs text-destructive">{descError}</p> : null}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
           <Select
@@ -268,6 +301,55 @@ export default function TaskForm({
           </Select>
           {priorityError ? <p className="text-xs text-destructive">{priorityError}</p> : null}
         </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="difficulty">Difficulty</Label>
+          <Select
+            id="difficulty"
+            value={values.difficulty}
+            onChange={(e) => update("difficulty", e.target.value as any)}
+          >
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </Select>
+          {difficultyError ? <p className="text-xs text-destructive">{difficultyError}</p> : null}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="tags">Tags</Label>
+        <div className="flex gap-2">
+          <Input
+            id="tags"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={handleTagInputKeyDown}
+            placeholder="Add a tag..."
+            disabled={values.tags.length >= 20}
+          />
+          <Button type="button" onClick={handleAddTag} disabled={!tagInput.trim() || values.tags.length >= 20}>
+            Add
+          </Button>
+        </div>
+        {values.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {values.tags.map((tag) => (
+              <Badge key={tag} variant="secondary" className="text-xs">
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTag(tag)}
+                  className="ml-1 hover:text-destructive"
+                  aria-label={`Remove ${tag}`}
+                >
+                  ×
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
+        {tagsError ? <p className="text-xs text-destructive">{tagsError}</p> : null}
       </div>
 
       <div className="flex items-center gap-3">

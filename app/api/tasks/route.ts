@@ -31,6 +31,16 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const difficulty = searchParams.get("difficulty");
+    if (difficulty && ["easy", "medium", "hard"].includes(difficulty)) {
+      filter.difficulty = difficulty;
+    }
+
+    const tag = searchParams.get("tag");
+    if (tag) {
+      filter.tags = tag;
+    }
+
     const search = searchParams.get("search");
     if (search) {
       filter.title = { $regex: search, $options: "i" };
@@ -72,10 +82,18 @@ export async function POST(req: NextRequest) {
     const TaskModule = await import("../../../models/Task");
     const Task = TaskModule.default;
 
-    const doc = await Task.create({
+    // Prevent clients from forging userId
+    const taskData = {
       ...parsed.data,
       userId: session.user.id,
-    });
+    };
+    
+    // Remove any userId from parsed data to ensure it's set from session
+    delete (taskData as any)._id;
+    delete (taskData as any).createdAt;
+    delete (taskData as any).updatedAt;
+
+    const doc = await Task.create(taskData);
 
     return NextResponse.json(doc, { status: 201 });
   } catch (err: any) {

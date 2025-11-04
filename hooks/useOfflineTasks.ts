@@ -282,7 +282,11 @@ export function useOfflineTasks(): UseOfflineTasksReturn {
       const tempId = generateTempId();
       const now = new Date().toISOString();
 
+      // Ensure new fields have defaults
       const optimisticTask: Task = {
+        difficulty: "medium",
+        tags: [],
+        completedAt: taskData.status === "done" ? now : null,
         ...taskData,
         _id: tempId,
         createdAt: now,
@@ -334,15 +338,26 @@ export function useOfflineTasks(): UseOfflineTasksReturn {
         clearTimeout(existing.timeoutId);
       }
 
+      // Handle completedAt automatically based on status change
+      const enrichedUpdates = { ...updates };
+      if (updates.status !== undefined) {
+        const currentTask = tasks.find((t) => t._id === taskId);
+        if (updates.status === "done" && currentTask?.status !== "done") {
+          enrichedUpdates.completedAt = new Date().toISOString();
+        } else if (updates.status !== "done" && currentTask?.status === "done") {
+          enrichedUpdates.completedAt = null;
+        }
+      }
+
       // Update task immediately (optimistic)
       setTasks((prev) =>
-        prev.map((task) => (task._id === taskId ? { ...task, ...updates, updatedAt: new Date().toISOString() } : task))
+        prev.map((task) => (task._id === taskId ? { ...task, ...enrichedUpdates, updatedAt: new Date().toISOString() } : task))
       );
 
       // Update in IndexedDB
       const currentTask = tasks.find((t) => t._id === taskId);
       if (currentTask) {
-        const updatedTask = { ...currentTask, ...updates, updatedAt: new Date().toISOString() };
+        const updatedTask = { ...currentTask, ...enrichedUpdates, updatedAt: new Date().toISOString() };
         optimisticTasks.current.set(taskId, updatedTask);
         await indexedDB.setItem(TASKS_STORE, taskId, updatedTask);
       }
@@ -354,7 +369,7 @@ export function useOfflineTasks(): UseOfflineTasksReturn {
 
       pendingUpdates.current.set(taskId, {
         taskId,
-        updates,
+        updates: enrichedUpdates,
         timeoutId,
       });
     },

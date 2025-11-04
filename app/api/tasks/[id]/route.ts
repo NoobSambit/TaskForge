@@ -53,10 +53,16 @@ export async function PUT(req: NextRequest, ctx: { params: { id: string } }) {
     }
 
     const updateData = { ...parsed.data } as Record<string, any>;
+    
+    // Prevent clients from forging these fields
     delete updateData.userId;
     delete updateData._id;
     delete updateData.createdAt;
     delete updateData.updatedAt;
+    
+    // Remove completedAt from updateData - it will be handled by the pre-update hook
+    // based on status changes
+    delete updateData.completedAt;
 
     const { dbConnect } = await import("../../../../lib/db");
     await dbConnect();
