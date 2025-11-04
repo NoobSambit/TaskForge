@@ -260,6 +260,221 @@ Optional environment variables for production:
 5. **Version achievements** by keeping history of `achievements.json`
 6. **Document custom criteria types** when adding new achievement mechanics
 
+## XP Engine
+
+The XP calculation engine is a pure, deterministic function that computes experience points for completed tasks. It's designed to be:
+
+- **Pure**: No side effects, same inputs always produce same outputs
+- **Transparent**: Returns detailed breakdown of all applied rules
+- **Configurable**: All coefficients centralized in `lib/gamification/config.ts`
+- **Testable**: Covered by comprehensive unit tests
+
+### Usage
+
+```typescript
+import { calculateXp } from '@/lib/gamification';
+import type { TaskData, UserContext } from '@/lib/gamification';
+
+const task: TaskData = {
+  priority: 5,
+  difficulty: 'hard',
+  tags: ['urgent', 'bug-fix'],
+  completedAt: new Date(),
+  createdAt: new Date(Date.now() - 86400000),
+  dueDate: new Date(Date.now() + 86400000),
+};
+
+const user: UserContext = {
+  userId: 'user123',
+  xpMultiplier: 1.2,
+  currentStreak: 7,
+};
+
+const result = calculateXp(task, user);
+console.log(result.delta); // e.g., 142
+console.log(result.appliedRules); // Detailed breakdown
+```
+
+### XP Calculation Flow
+
+The engine applies rules in this order:
+
+1. **Base XP**: Determined by task difficulty
+   - Easy: 10 XP
+   - Medium: 25 XP
+   - Hard: 50 XP
+
+2. **Priority Multiplier**: Based on task priority (1-5)
+   - Priority 1: 0.8x
+   - Priority 2: 0.9x
+   - Priority 3: 1.0x (default)
+   - Priority 4: 1.25x
+   - Priority 5: 1.5x
+
+3. **Tag Bonuses**: Additive bonuses for special tags
+   - `urgent`: +15 XP
+   - `bug-fix`: +20 XP
+   - `learning`: +10 XP
+   - `refactor`: +15 XP
+   - `documentation`: +8 XP
+   - `testing`: +12 XP
+   - `review`: +10 XP
+   - `deployment`: +25 XP
+   - `design`: +15 XP
+   - `research`: +12 XP
+
+4. **Streak Multiplier**: Based on consecutive active days
+   - 0-2 days: 1.0x (no bonus)
+   - 3-6 days: 1.1x
+   - 7-13 days: 1.2x
+   - 14-29 days: 1.3x
+   - 30+ days: 1.5x
+
+5. **Time-Based Adjustments**:
+   - Early completion: +10 XP (completed before due date)
+   - Late completion: -5 XP (completed after due date)
+   - Early bird: +5 XP (completed 5 AM - 9 AM)
+   - Night owl: +5 XP (completed 10 PM - 2 AM)
+   - Weekend: +8 XP (completed Saturday or Sunday)
+
+6. **User Multiplier**: Applied from user achievements/bonuses
+
+7. **Caps and Rounding**:
+   - Minimum: 5 XP per task
+   - Maximum: 200 XP per task
+   - Daily maximum: 1000 XP (optional)
+   - Rounded to nearest integer
+
+### Configuration
+
+All XP coefficients are defined in `lib/gamification/config.ts`:
+
+```typescript
+import {
+  BASE_XP,
+  PRIORITY_MULTIPLIERS,
+  TAG_BONUSES,
+  getStreakMultiplier,
+  TIME_BONUSES,
+  XP_CAPS,
+} from '@/lib/gamification/config';
+```
+
+To adjust the game balance, modify values in `config.ts` without touching the core engine logic.
+
+### Edge Cases
+
+The engine handles several edge cases:
+
+- **Missing completedAt**: Returns 0 XP
+- **Future completion date**: Returns 0 XP (invalid timestamp)
+- **Very old completion**: Returns 0 XP if > 7 days old (prevents backdating)
+- **Daily cap reached**: Returns 0 XP when daily limit hit
+- **Unknown tags**: Ignored silently
+- **Invalid priority**: Defaults to priority 3 multiplier
+
+### Testing
+
+The XP engine has comprehensive test coverage in `lib/__tests__/gamification/xpEngine.test.ts`:
+
+```bash
+npm test -- xpEngine
+```
+
+Tests cover:
+- Basic calculations for all difficulty levels
+- Priority multipliers
+- Tag bonus stacking
+- Streak multipliers
+- Time-based bonuses
+- User multipliers
+- XP caps
+- Edge cases
+- Complex scenarios with multiple bonuses
+
+### Applied Rules
+
+The engine returns an `appliedRules` array for transparency:
+
+```typescript
+{
+  delta: 142,
+  appliedRules: [
+    { key: 'base_xp', value: 50, description: 'Base XP for hard difficulty' },
+    { key: 'priority_multiplier', value: 1.5, description: 'Priority 5 multiplier (50 × 1.5 = 75.0)' },
+    { key: 'tag_bonus', value: 35, description: 'Tag bonuses: urgent, bug-fix (+35 XP)' },
+    { key: 'streak_multiplier', value: 1.2, description: '7-day streak multiplier (110.0 × 1.2 = 132.0)' },
+    { key: 'user_multiplier', value: 1.2, description: 'User multiplier (132.0 × 1.2 = 158.4)' },
+    { key: 'rounding', value: 158, description: 'Rounded (158.40 → 158)' }
+  ]
+}
+```
+
+This makes it easy to debug XP calculations and show users exactly why they received a certain amount of XP.
+
+### Integration
+
+The XP engine is a pure function and doesn't interact with the database. Services that award XP should:
+
+1. Call `calculateXp()` with task and user data
+2. Update user's XP total
+3. Log the activity to `ActivityLog`
+4. Check for level-ups and achievements
+5. Update streak information
+
+Example integration:
+
+```typescript
+import { calculateXp } from '@/lib/gamification';
+import User from '@/models/User';
+import ActivityLog from '@/models/ActivityLog';
+
+async function awardXpForTask(taskId: string, userId: string) {
+  // Fetch data
+  const task = await Task.findById(taskId);
+  const user = await User.findById(userId);
+  
+  // Calculate XP
+  const result = calculateXp(
+    {
+      priority: task.priority,
+      difficulty: task.difficulty,
+      tags: task.tags,
+      completedAt: task.completedAt,
+      createdAt: task.createdAt,
+      dueDate: task.dueDate,
+    },
+    {
+      userId: user._id,
+      xpMultiplier: user.xpMultiplier,
+      currentStreak: user.currentStreak,
+    }
+  );
+  
+  // Award XP
+  if (result.delta > 0) {
+    await User.updateOne(
+      { _id: userId },
+      { $inc: { xp: result.delta } }
+    );
+    
+    // Log activity
+    await ActivityLog.create({
+      userId,
+      activityType: 'task_completed',
+      metadata: {
+        taskId,
+        appliedRules: result.appliedRules,
+      },
+      xpEarned: result.delta,
+      date: new Date(),
+    });
+  }
+  
+  return result;
+}
+```
+
 ## Future Enhancements
 
 Potential additions to consider:
@@ -271,3 +486,4 @@ Potential additions to consider:
 - Custom user avatars
 - XP boost items/power-ups
 - Team/guild systems
+- Dynamic XP scaling based on user level
