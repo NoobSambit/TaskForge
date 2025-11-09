@@ -180,6 +180,7 @@ export async function applyLevelChanges(
   // Dynamic imports to avoid circular dependencies
   const { default: ActivityLog } = await import("../../models/ActivityLog");
   const { gamificationEvents } = await import("./events");
+  const { unlockThemesForLevelUp } = await import("./themeUnlock");
   
   // Process each level-up
   for (const level of levelsCrossed) {
@@ -199,11 +200,28 @@ export async function applyLevelChanges(
       },
     });
     
+    // Unlock themes for this level
+    let unlockedThemes: string[] = [];
+    try {
+      const newlyUnlockedThemes = await unlockThemesForLevelUp(
+        user._id.toString(),
+        level,
+        level - 1
+      );
+      unlockedThemes = newlyUnlockedThemes.map(theme => theme.name);
+      if (unlockedThemes.length > 0) {
+        console.log(`🎨 User ${user._id.toString()} unlocked ${unlockedThemes.length} theme(s): ${unlockedThemes.join(', ')}`);
+      }
+    } catch (themeError) {
+      console.error("❌ Error unlocking themes for level-up:", themeError);
+      // Don't fail the level-up if theme unlocking fails
+    }
+
     const levelUpInfo: LevelUpInfo = {
       oldLevel: level - 1,
       newLevel: level,
       totalXp: newXp,
-      unlockedRewards: [], // Can be extended with theme unlocks, etc.
+      unlockedRewards: unlockedThemes, // Theme names unlocked at this level
     };
     
     levelUps.push(levelUpInfo);

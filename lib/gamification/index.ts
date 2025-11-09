@@ -79,6 +79,27 @@ export {
 } from "./achievementsConfig";
 export type { AchievementConfig, AchievementPredicate } from "./achievementsConfig";
 
+// Export theme system
+export {
+  THEMES,
+  getThemesAvailableAtLevel,
+  getThemesUnlockedAtLevel,
+  isThemeAvailableAtLevel,
+  getThemesByRarity,
+  getDefaultThemes,
+} from "./themes";
+export type { ThemeDefinition, ThemeRarity } from "./themes";
+
+// Export theme unlock service
+export {
+  unlockThemesForLevelUp,
+  getAvailableThemesForUser,
+  updateUserTheme,
+  getUserThemeStatus,
+  initializeThemesForUser,
+  getFutureThemeUnlocks,
+} from "./themeUnlock";
+
 // Export configuration for reference (read-only)
 export {
   BASE_XP,

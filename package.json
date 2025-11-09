@@ -10,6 +10,8 @@
     "test": "vitest run",
     "migrate:gamification": "tsx scripts/gamification/migrateUsers.ts",
     "migrate:gamification:dry-run": "tsx scripts/gamification/migrateUsers.ts --dry-run",
+    "migrate:themes": "tsx scripts/gamification/migrateThemes.ts",
+    "migrate:themes:dry-run": "tsx scripts/gamification/migrateThemes.ts --dry-run",
     "seed:achievements": "tsx scripts/gamification/seedAchievements.ts",
     "seed:achievements:dry-run": "tsx scripts/gamification/seedAchievements.ts --dry-run"
   },
