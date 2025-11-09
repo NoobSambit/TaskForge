@@ -10,6 +10,28 @@ import { EventEmitter } from "events";
 import type { XpComputation, AchievementUnlockResult } from "./types";
 
 /**
+ * Streak update event payload
+ */
+export interface StreakUpdateEvent {
+  userId: string;
+  oldStreak: number;
+  newStreak: number;
+  lastStreakDate: Date;
+  timestamp: Date;
+}
+
+/**
+ * Theme unlocked event payload
+ */
+export interface ThemeUnlockedEvent {
+  userId: string;
+  themeId: string;
+  themeName: string;
+  unlockedAt: Date;
+  timestamp: Date;
+}
+
+/**
  * Event payloads for gamification events
  */
 export interface XpAwardedEvent {
@@ -50,6 +72,8 @@ export const GAMIFICATION_EVENTS = {
   LEVEL_UP: "levelUp",
   LEVEL_CHECK_PENDING: "levelCheckPending",
   ACHIEVEMENT_UNLOCKED: "achievementUnlocked",
+  STREAK_UPDATE: "streakUpdate",
+  THEME_UNLOCKED: "themeUnlocked",
 } as const;
 
 /**
@@ -76,6 +100,14 @@ class GamificationEventEmitter extends EventEmitter {
 
   emitAchievementUnlocked(event: AchievementUnlockedEvent): void {
     this.emit(GAMIFICATION_EVENTS.ACHIEVEMENT_UNLOCKED, event);
+  }
+
+  emitStreakUpdate(event: StreakUpdateEvent): void {
+    this.emit(GAMIFICATION_EVENTS.STREAK_UPDATE, event);
+  }
+
+  emitThemeUnlocked(event: ThemeUnlockedEvent): void {
+    this.emit(GAMIFICATION_EVENTS.THEME_UNLOCKED, event);
   }
 }
 
