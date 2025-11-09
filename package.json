@@ -11,7 +11,9 @@
     "migrate:gamification": "tsx scripts/gamification/migrateUsers.ts",
     "migrate:gamification:dry-run": "tsx scripts/gamification/migrateUsers.ts --dry-run",
     "seed:achievements": "tsx scripts/gamification/seedAchievements.ts",
-    "seed:achievements:dry-run": "tsx scripts/gamification/seedAchievements.ts --dry-run"
+    "seed:achievements:dry-run": "tsx scripts/gamification/seedAchievements.ts --dry-run",
+    "backfill:streaks": "tsx scripts/gamification/backfill-streaks.ts",
+    "backfill:streaks:dry-run": "tsx scripts/gamification/backfill-streaks.ts --dry-run"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.7.0",

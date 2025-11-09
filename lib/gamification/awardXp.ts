@@ -8,6 +8,7 @@
 import { calculateXp, normalizeTaskData } from "./xpEngine";
 import { gamificationEvents } from "./events";
 import { applyLevelChanges } from "./levels";
+import { applyCompletionToStreak } from "./streaks";
 import type { UserContext, XpCalculationOptions } from "./types";
 
 /**
@@ -146,12 +147,16 @@ export async function awardXpForTaskCompletion(
       };
     }
 
-    // Build user context for XP calculation
+    // Apply completion to streak BEFORE calculating XP
+    // This ensures the streak multiplier is up-to-date for XP calculation
+    const streakResult = await applyCompletionToStreak(user, task.completedAt);
+
+    // Build user context for XP calculation (with updated streak)
     const userContext: UserContext = {
       userId: user._id.toString(),
       xpMultiplier: user.xpMultiplier,
-      currentStreak: user.currentStreak,
-      lastStreakDate: user.lastStreakDate,
+      currentStreak: streakResult.currentStreak,
+      lastStreakDate: streakResult.lastStreakDate,
     };
 
     // Normalize task data for XP engine
@@ -178,12 +183,18 @@ export async function awardXpForTaskCompletion(
       };
     }
 
-    // Atomically update user XP using $inc
+    // Atomically update user XP, level, and streak fields using $inc and $set
+    // This prevents race conditions by updating all fields in a single atomic operation
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
         $inc: { xp: computation.delta },
-        $set: { lastActiveAt: new Date() },
+        $set: {
+          lastActiveAt: new Date(),
+          currentStreak: streakResult.currentStreak,
+          longestStreak: streakResult.longestStreak,
+          lastStreakDate: streakResult.lastStreakDate,
+        },
       },
       { new: true }
     );
@@ -201,7 +212,7 @@ export async function awardXpForTaskCompletion(
     // Apply level changes (handles level-up detection, logging, and events)
     await applyLevelChanges(updatedUser, computation.delta);
     
-    // Save user with updated level and preferences
+    // Save user with updated level and preferences only
     await updatedUser.save();
     
     const newLevel = updatedUser.level;
