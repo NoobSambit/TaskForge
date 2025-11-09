@@ -8,6 +8,8 @@
 import { calculateXp, normalizeTaskData } from "./xpEngine";
 import { gamificationEvents } from "./events";
 import { applyLevelChanges } from "./levels";
+import { evaluateAchievements } from "./achievementsEngine";
+import { buildTaskCompletionContext } from "./achievementContext";
 import type { UserContext, XpCalculationOptions } from "./types";
 
 /**
@@ -18,6 +20,10 @@ export interface AwardXpOptions extends XpCalculationOptions {
   allowNegativeAdjustment?: boolean;
   /** Custom activity type (defaults to "task_completion") */
   activityType?: string;
+  /** Override XP amount (bypasses calculation) */
+  xpOverride?: number;
+  /** Reason for the XP award (for logging) */
+  reason?: string;
 }
 
 /**
@@ -72,6 +78,8 @@ export async function awardXpForTaskCompletion(
   const {
     allowNegativeAdjustment = false,
     activityType = "task_completion",
+    xpOverride,
+    reason,
     ...calculationOptions
   } = options;
 
@@ -81,38 +89,41 @@ export async function awardXpForTaskCompletion(
     const { default: User } = await import("../../models/User");
     const { default: ActivityLog } = await import("../../models/ActivityLog");
 
-    // Load task
-    const task = await Task.findById(taskId);
-    if (!task) {
-      return {
-        success: false,
-        xpAwarded: 0,
-        totalXp: 0,
-        newLevel: 1,
-        reason: "Task not found",
-      };
-    }
+    // Load task (skip for achievement rewards)
+    let task = null;
+    if (!taskId.startsWith("achievement_")) {
+      task = await Task.findById(taskId);
+      if (!task) {
+        return {
+          success: false,
+          xpAwarded: 0,
+          totalXp: 0,
+          newLevel: 1,
+          reason: "Task not found",
+        };
+      }
 
-    // Verify task belongs to user
-    if (task.userId !== userId) {
-      return {
-        success: false,
-        xpAwarded: 0,
-        totalXp: 0,
-        newLevel: 1,
-        reason: "Task does not belong to user",
-      };
-    }
+      // Verify task belongs to user
+      if (task.userId !== userId) {
+        return {
+          success: false,
+          xpAwarded: 0,
+          totalXp: 0,
+          newLevel: 1,
+          reason: "Task does not belong to user",
+        };
+      }
 
-    // Verify task is completed
-    if (task.status !== "done" || !task.completedAt) {
-      return {
-        success: false,
-        xpAwarded: 0,
-        totalXp: 0,
-        newLevel: 1,
-        reason: "Task is not completed",
-      };
+      // Verify task is completed
+      if (task.status !== "done" || !task.completedAt) {
+        return {
+          success: false,
+          xpAwarded: 0,
+          totalXp: 0,
+          newLevel: 1,
+          reason: "Task is not completed",
+        };
+      }
     }
 
     // Load user
@@ -128,20 +139,29 @@ export async function awardXpForTaskCompletion(
     }
 
     // Check for duplicate award (idempotency)
-    const existingLog = await ActivityLog.findOne({
+    const duplicateQuery: any = {
       userId,
-      taskId,
       activityType,
-    });
+    };
+
+    // Only check taskId for real tasks, not achievement rewards
+    if (!taskId.startsWith("achievement_")) {
+      duplicateQuery.taskId = taskId;
+    } else if (reason?.startsWith("achievement_unlock:")) {
+      // For achievement rewards, check by achievement key
+      duplicateQuery.achievementKey = reason.replace("achievement_unlock:", "");
+    }
+
+    const existingLog = await ActivityLog.findOne(duplicateQuery);
 
     if (existingLog) {
-      // Already awarded XP for this task
+      // Already awarded XP for this task/achievement
       return {
         success: true,
         xpAwarded: 0,
         totalXp: user.xp,
         newLevel: user.level,
-        reason: "XP already awarded for this task",
+        reason: "XP already awarded for this task/achievement",
         alreadyAwarded: true,
       };
     }
@@ -154,18 +174,46 @@ export async function awardXpForTaskCompletion(
       lastStreakDate: user.lastStreakDate,
     };
 
-    // Normalize task data for XP engine
-    const taskData = normalizeTaskData({
-      priority: task.priority,
-      difficulty: task.difficulty,
-      tags: task.tags,
-      completedAt: task.completedAt,
-      createdAt: task.createdAt,
-      dueDate: null, // Task model doesn't have dueDate yet
-    });
+    // Normalize task data for XP engine (skip for achievement rewards)
+    let taskData = null;
+    if (task) {
+      taskData = normalizeTaskData({
+        priority: task.priority,
+        difficulty: task.difficulty,
+        tags: task.tags,
+        completedAt: task.completedAt,
+        createdAt: task.createdAt,
+        dueDate: null, // Task model doesn't have dueDate yet
+      });
+    }
 
-    // Calculate XP
-    const computation = calculateXp(taskData, userContext, calculationOptions);
+    // Calculate XP or use override
+    let computation;
+    if (xpOverride !== undefined) {
+      // Create a mock computation for the override
+      computation = {
+        delta: xpOverride,
+        appliedRules: [
+          {
+            key: "override" as any,
+            value: xpOverride,
+            description: reason || "XP override",
+          },
+        ],
+      };
+    } else if (taskData) {
+      // Calculate XP normally
+      computation = calculateXp(taskData, userContext, calculationOptions);
+    } else {
+      // No task data and no override - cannot calculate XP
+      return {
+        success: false,
+        xpAwarded: 0,
+        totalXp: user.xp,
+        newLevel: user.level,
+        reason: "No task data available for XP calculation",
+      };
+    }
 
     // Don't award negative XP unless explicitly allowed
     if (computation.delta < 0 && !allowNegativeAdjustment) {
@@ -207,30 +255,46 @@ export async function awardXpForTaskCompletion(
     const newLevel = updatedUser.level;
 
     // Create activity log entry
-    await ActivityLog.create({
+    const activityLogData: any = {
       userId,
-      taskId,
       activityType,
       xpEarned: computation.delta,
       date: new Date(),
       metadata: {
-        taskTitle: task.title,
-        taskDifficulty: task.difficulty,
-        taskPriority: task.priority,
-        taskTags: task.tags,
         appliedRules: computation.appliedRules,
       },
-    });
+    };
+
+    // Only include task-related fields if we have a real task
+    if (task && !taskId.startsWith("achievement_")) {
+      activityLogData.taskId = taskId;
+      activityLogData.metadata.taskTitle = task.title;
+      activityLogData.metadata.taskDifficulty = task.difficulty;
+      activityLogData.metadata.taskPriority = task.priority;
+      activityLogData.metadata.taskTags = task.tags;
+    } else if (taskId.startsWith("achievement_")) {
+      // For achievement rewards, store achievement key instead of taskId
+      const achievementKey = taskId.replace(/^achievement_.*_(\d+)$/, "$1");
+      activityLogData.achievementKey = reason?.replace(/^achievement_unlock:/, "") || achievementKey;
+    }
+
+    await ActivityLog.create(activityLogData);
 
     // Emit XP awarded event
-    gamificationEvents.emitXpAwarded({
+    const xpAwardedEvent: any = {
       userId: updatedUser._id.toString(),
-      taskId: task._id.toString(),
       xpDelta: computation.delta,
       totalXp: updatedUser.xp,
       computation,
       timestamp: new Date(),
-    });
+    };
+
+    // Only include taskId for real tasks
+    if (task && !taskId.startsWith("achievement_")) {
+      xpAwardedEvent.taskId = task._id.toString();
+    }
+
+    gamificationEvents.emitXpAwarded(xpAwardedEvent);
 
     // Emit level check pending event for downstream processing
     gamificationEvents.emitLevelCheckPending({
@@ -239,6 +303,22 @@ export async function awardXpForTaskCompletion(
       currentLevel: newLevel,
       timestamp: new Date(),
     });
+
+    // Trigger achievement evaluation for real task completions
+    if (task && !taskId.startsWith("achievement_")) {
+      try {
+        console.log(`🏆 Triggering achievement evaluation for task completion: ${taskId}`);
+        const achievementContext = await buildTaskCompletionContext(userId, taskId);
+        const achievementResults = await evaluateAchievements("task_completed", achievementContext);
+        
+        if (achievementResults.newlyUnlocked.length > 0) {
+          console.log(`🎉 ${achievementResults.newlyUnlocked.length} achievements unlocked from task completion`);
+        }
+      } catch (achievementError) {
+        console.error("❌ Error evaluating achievements after task completion:", achievementError);
+        // Don't fail the XP awarding if achievement evaluation fails
+      }
+    }
 
     return {
       success: true,

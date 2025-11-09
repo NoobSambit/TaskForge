@@ -33,6 +33,7 @@ export type {
   XpAwardedEvent,
   LevelUpEvent,
   LevelCheckPendingEvent,
+  AchievementUnlockedEvent,
 } from "./events";
 
 // Export types for consumers
@@ -43,7 +44,40 @@ export type {
   TaskData,
   UserContext,
   XpCalculationOptions,
+  Achievement,
+  AchievementContext,
+  AchievementUnlockResult,
+  AchievementEvaluationResult,
 } from "./types";
+
+// Export achievements engine
+export {
+  evaluateAchievements,
+  unlockAchievement,
+  hasAchievement,
+  getUserAchievements,
+  getUserAchievementStats,
+  evaluateAchievementsByCategory,
+} from "./achievementsEngine";
+
+// Export achievement context builders
+export {
+  buildAchievementContext,
+  buildTaskCompletionContext,
+  buildTaskCreationContext,
+  buildStreakUpdateContext,
+  buildLevelUpContext,
+  buildManualCheckContext,
+} from "./achievementContext";
+
+// Export achievement configurations
+export {
+  ACHIEVEMENTS_CONFIG,
+  getAchievementConfig,
+  getAchievementsByCategory,
+  getAchievementsByRarity,
+} from "./achievementsConfig";
+export type { AchievementConfig, AchievementPredicate } from "./achievementsConfig";
 
 // Export configuration for reference (read-only)
 export {
