@@ -5,3 +5,4 @@
  */
 
 export { OfflineSyncProvider, useOfflineSync } from "./OfflineSyncProvider";
+export { GamificationProvider, useGamification } from "./GamificationProvider";
