@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.7.0",
+    "date-fns": "^4.1.0",
     "localforage": "^1.10.0",
     "mongodb": "^6.8.0",
     "mongoose": "^8.7.0",
