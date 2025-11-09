@@ -6,6 +6,8 @@
  */
 
 import { LEVEL_PROGRESSION } from "./config";
+import { evaluateAchievements } from "./achievementsEngine";
+import { buildLevelUpContext } from "./achievementContext";
 
 /**
  * Level information including XP requirements
@@ -214,6 +216,24 @@ export async function applyLevelChanges(
       totalXp: newXp,
       timestamp: new Date(),
     });
+
+    // Trigger achievement evaluation for level-up
+    try {
+      console.log(`🏆 Triggering achievement evaluation for level-up: ${user._id.toString()} reached level ${level}`);
+      const achievementContext = await buildLevelUpContext(user._id.toString(), {
+        oldLevel: level - 1,
+        newLevel: level,
+        totalXp: newXp,
+      });
+      const achievementResults = await evaluateAchievements("level_up", achievementContext);
+      
+      if (achievementResults.newlyUnlocked.length > 0) {
+        console.log(`🎉 ${achievementResults.newlyUnlocked.length} achievements unlocked from level-up`);
+      }
+    } catch (achievementError) {
+      console.error("❌ Error evaluating achievements after level-up:", achievementError);
+      // Don't fail the level-up if achievement evaluation fails
+    }
   }
   
   // Update user's level and nextLevelAt

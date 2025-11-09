@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from "events";
-import type { XpComputation } from "./types";
+import type { XpComputation, AchievementUnlockResult } from "./types";
 
 /**
  * Event payloads for gamification events
@@ -36,6 +36,12 @@ export interface LevelCheckPendingEvent {
   timestamp: Date;
 }
 
+export interface AchievementUnlockedEvent {
+  userId: string;
+  achievement: AchievementUnlockResult;
+  timestamp: Date;
+}
+
 /**
  * Event type names
  */
@@ -43,6 +49,7 @@ export const GAMIFICATION_EVENTS = {
   XP_AWARDED: "xpAwarded",
   LEVEL_UP: "levelUp",
   LEVEL_CHECK_PENDING: "levelCheckPending",
+  ACHIEVEMENT_UNLOCKED: "achievementUnlocked",
 } as const;
 
 /**
@@ -65,6 +72,10 @@ class GamificationEventEmitter extends EventEmitter {
 
   emitLevelCheckPending(event: LevelCheckPendingEvent): void {
     this.emit(GAMIFICATION_EVENTS.LEVEL_CHECK_PENDING, event);
+  }
+
+  emitAchievementUnlocked(event: AchievementUnlockedEvent): void {
+    this.emit(GAMIFICATION_EVENTS.ACHIEVEMENT_UNLOCKED, event);
   }
 }
 
