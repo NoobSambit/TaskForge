@@ -10,6 +10,7 @@ import { gamificationEvents } from "./events";
 import { applyLevelChanges } from "./levels";
 import { evaluateAchievements } from "./achievementsEngine";
 import { buildTaskCompletionContext } from "./achievementContext";
+import { updateUserStreakWithEvents } from "./streaks";
 import type { UserContext, XpCalculationOptions } from "./types";
 
 /**
@@ -279,6 +280,16 @@ export async function awardXpForTaskCompletion(
     }
 
     await ActivityLog.create(activityLogData);
+
+    // Update streak for real task completions
+    if (task && !taskId.startsWith("achievement_")) {
+      try {
+        await updateUserStreakWithEvents(userId, 1);
+      } catch (streakError) {
+        console.error("❌ Error updating user streak:", streakError);
+        // Don't fail the XP awarding if streak update fails
+      }
+    }
 
     // Emit XP awarded event
     const xpAwardedEvent: any = {

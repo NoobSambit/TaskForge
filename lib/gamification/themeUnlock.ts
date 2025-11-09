@@ -5,8 +5,9 @@
  * Integrates with the level system to automatically unlock eligible themes.
  */
 
-import { User, IUser } from "@/models/User";
+import { getUserById, updateUserGamification, type IUser } from "@/models/User";
 import { ActivityLog } from "@/models/ActivityLog";
+import { gamificationEvents } from "./events";
 import { 
   getThemesUnlockedAtLevel, 
   getThemesAvailableAtLevel, 
@@ -35,7 +36,7 @@ export async function unlockThemesForLevelUp(
   }
 
   // Get current user to check unlocked themes
-  const user = await User.findById(userId);
+  const user = await getUserById(userId);
   if (!user) {
     throw new Error(`User not found: ${userId}`);
   }
@@ -56,14 +57,9 @@ export async function unlockThemesForLevelUp(
   }
 
   // Update user's unlocked themes
-  await User.updateOne(
-    { _id: userId },
-    { 
-      $addToSet: { 
-        unlockedThemes: { $each: themesToUnlock.map(t => t.id) }
-      }
-    }
-  );
+  await updateUserGamification(userId, {
+    unlockedThemes: [...new Set([...(user.unlockedThemes || []), ...themesToUnlock.map(t => t.id)])],
+  });
 
   // Log theme unlocks in activity log
   const activityPromises = themesToUnlock.map(theme => 
@@ -83,6 +79,18 @@ export async function unlockThemesForLevelUp(
 
   await Promise.all(activityPromises);
 
+  // Emit theme unlocked events
+  const now = new Date();
+  themesToUnlock.forEach(theme => {
+    gamificationEvents.emitThemeUnlocked({
+      userId,
+      themeId: theme.id,
+      themeName: theme.name,
+      unlockedAt: now,
+      timestamp: now,
+    });
+  });
+
   return themesToUnlock;
 }
 
@@ -93,15 +101,15 @@ export async function unlockThemesForLevelUp(
  * @returns Array of available theme definitions
  */
 export async function getAvailableThemesForUser(userId: string): Promise<ThemeDefinition[]> {
-  const user = await User.findById(userId);
+  const user = await getUserById(userId);
   if (!user) {
     throw new Error(`User not found: ${userId}`);
   }
 
   const unlockedThemeIds = user.unlockedThemes || [];
   return unlockedThemeIds
-    .map(themeId => THEMES[themeId])
-    .filter(Boolean); // Filter out any undefined themes
+    .map((themeId: string) => THEMES[themeId])
+    .filter((theme): theme is ThemeDefinition => Boolean(theme)); // Filter out any undefined themes
 }
 
 /**
@@ -112,7 +120,7 @@ export async function getAvailableThemesForUser(userId: string): Promise<ThemeDe
  * @returns Updated user document
  */
 export async function updateUserTheme(userId: string, themeId: string): Promise<IUser> {
-  const user = await User.findById(userId);
+  const user = await getUserById(userId);
   if (!user) {
     throw new Error(`User not found: ${userId}`);
   }
@@ -130,11 +138,9 @@ export async function updateUserTheme(userId: string, themeId: string): Promise<
   }
 
   // Update user's active theme
-  const updatedUser = await User.findByIdAndUpdate(
-    userId,
-    { theme: themeId },
-    { new: true }
-  );
+  const updatedUser = await updateUserGamification(userId, {
+    theme: themeId,
+  });
 
   if (!updatedUser) {
     throw new Error(`Failed to update theme for user ${userId}`);
@@ -150,7 +156,7 @@ export async function updateUserTheme(userId: string, themeId: string): Promise<
  * @returns Object with available, unlocked, and locked themes
  */
 export async function getUserThemeStatus(userId: string) {
-  const user = await User.findById(userId);
+  const user = await getUserById(userId);
   if (!user) {
     throw new Error(`User not found: ${userId}`);
   }
@@ -185,16 +191,10 @@ export async function initializeThemesForUser(userId: string): Promise<IUser> {
   const defaultThemes = Object.values(THEMES).filter(theme => theme.levelRequired === 1);
   const defaultThemeIds = defaultThemes.map(theme => theme.id);
 
-  const updatedUser = await User.findByIdAndUpdate(
-    userId,
-    { 
-      $set: { 
-        theme: 'default',
-        unlockedThemes: defaultThemeIds 
-      }
-    },
-    { new: true }
-  );
+  const updatedUser = await updateUserGamification(userId, {
+    theme: 'default',
+    unlockedThemes: defaultThemeIds,
+  });
 
   if (!updatedUser) {
     throw new Error(`Failed to initialize themes for user ${userId}`);
@@ -210,7 +210,7 @@ export async function initializeThemesForUser(userId: string): Promise<IUser> {
  * @returns Array of themes that will be unlocked in the future
  */
 export async function getFutureThemeUnlocks(userId: string): Promise<Array<{level: number, themes: ThemeDefinition[]}>> {
-  const user = await User.findById(userId);
+  const user = await getUserById(userId);
   if (!user) {
     throw new Error(`User not found: ${userId}`);
   }

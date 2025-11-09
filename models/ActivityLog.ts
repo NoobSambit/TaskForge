@@ -34,4 +34,5 @@ ActivityLogSchema.index({ userId: 1, taskId: 1, activityType: 1 }, { unique: tru
 
 const ActivityLog = (models.ActivityLog as Model<IActivityLog>) || model<IActivityLog>("ActivityLog", ActivityLogSchema);
 
+export { ActivityLog };
 export default ActivityLog;
