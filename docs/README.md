@@ -13,6 +13,13 @@ This directory contains comprehensive documentation for the application's featur
   - Migration and seeding scripts
   - TypeScript type definitions
 
+- **[Leaderboard Feature](./LEADERBOARD.md)** - Global rankings with privacy controls
+  - Weekly and monthly leaderboard periods
+  - Privacy controls (opt-in and anonymous mode)
+  - Feature flag management
+  - API endpoints and components
+  - Anti-cheat measures and fair play
+
 ### Offline & Sync
 
 - **[Offline-First Architecture & QA Guide](./offline-testing.md)** - Comprehensive guide to the offline-first architecture

@@ -13,3 +13,4 @@ export { AchievementsGrid } from "./AchievementsGrid";
 export { AchievementBadge } from "./AchievementBadge";
 export { RecentActivityList } from "./RecentActivityList";
 export { DashboardSkeleton } from "./DashboardSkeleton";
+export { Leaderboard } from "./Leaderboard";

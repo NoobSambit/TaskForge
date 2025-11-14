@@ -125,6 +125,34 @@ export async function GET(request: NextRequest) {
       description: "Health check for SSE connection",
       authRequired: true,
     },
+    {
+      path: "/api/gamification/preferences",
+      method: "GET",
+      description: "Get user's gamification preferences",
+      authRequired: true,
+    },
+    {
+      path: "/api/gamification/preferences",
+      method: "PATCH",
+      description: "Update user's gamification preferences",
+      authRequired: true,
+      body: {
+        leaderboardOptIn: { type: "boolean", optional: true, description: "Opt in to leaderboard" },
+        anonymousMode: { type: "boolean", optional: true, description: "Display as anonymous on leaderboard" },
+        timezone: { type: "string", optional: true, description: "User timezone" },
+      },
+    },
+    {
+      path: "/api/gamification/leaderboard",
+      method: "GET",
+      description: "Get global leaderboard rankings (requires feature flag)",
+      authRequired: true,
+      queryParams: {
+        period: { type: "string", default: "weekly", description: "Period: weekly or monthly" },
+        page: { type: "number", default: "1", description: "Page number" },
+        limit: { type: "number", default: "50", description: "Items per page (max: 100)" },
+      },
+    },
   ];
 
   const response = {
