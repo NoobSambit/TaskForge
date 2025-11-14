@@ -6,3 +6,4 @@
 
 export { OfflineSyncProvider, useOfflineSync } from "./OfflineSyncProvider";
 export { GamificationProvider, useGamification } from "./GamificationProvider";
+export { ToastProvider, useToast } from "./ToastProvider";

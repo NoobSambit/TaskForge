@@ -29,6 +29,12 @@ This directory contains comprehensive documentation for the application's featur
   - Smart defaults and validation
   - User experience considerations
 
+- **[Achievements UI](./ACHIEVEMENTS_UI.md)** - Achievement display and notification system
+  - Toast notifications with rarity styling
+  - Achievement badges with locked/unlocked states
+  - Grid layout with filtering and real-time updates
+  - Accessibility and reduced-motion support
+
 ## Getting Started
 
 ### Initial Setup
