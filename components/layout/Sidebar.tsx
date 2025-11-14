@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const nav = [
   { href: "/dashboard", label: "Tasks" },
+  { href: "/gamification", label: "Gamification" },
   { href: "/settings", label: "Settings" },
 ];
 
