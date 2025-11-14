@@ -34,3 +34,6 @@ export type { UseStreakDataReturn } from "./useStreakData";
 
 export { useTheme } from "./useTheme";
 export type { UseThemeReturn } from "./useTheme";
+
+export { useAnalytics } from "./useAnalytics";
+export type { UseAnalyticsReturn } from "./useAnalytics";

@@ -9,3 +9,7 @@ export { DashboardHero } from "./DashboardHero";
 export { StreakSummary } from "./StreakSummary";
 export { StreakHeatmap } from "./StreakHeatmap";
 export { ThemeGallery } from "./ThemeGallery";
+export { AchievementsGrid } from "./AchievementsGrid";
+export { AchievementBadge } from "./AchievementBadge";
+export { RecentActivityList } from "./RecentActivityList";
+export { DashboardSkeleton } from "./DashboardSkeleton";
