@@ -2,8 +2,9 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LevelBadge, XpProgressIndicator } from "@/components/gamification";
+import { LevelBadge, XpProgressIndicator, StreakSummary, StreakHeatmap } from "@/components/gamification";
 import { useGamification } from "@/components/providers";
+import { useStreakData } from "@/hooks";
 
 interface DashboardHeroProps {
   className?: string;
@@ -19,6 +20,11 @@ export function DashboardHero({ className = "" }: DashboardHeroProps) {
     lastUpdated,
     isLoading 
   } = useGamification();
+
+  const { 
+    data: streakData, 
+    isLoading: streakLoading 
+  } = useStreakData({ days: 90 });
 
   // Animation variants
   const heroVariants = {
@@ -220,6 +226,24 @@ export function DashboardHero({ className = "" }: DashboardHeroProps) {
             </div>
           )}
         </div>
+      </motion.div>
+
+      {/* Streak Summary */}
+      <motion.div variants={shouldAnimate ? cardVariants : {}}>
+        <StreakSummary
+          current={streakData?.current ?? streak}
+          longest={streakData?.longest ?? 0}
+          isActive={streakData?.isActive ?? streak > 0}
+          isLoading={streakLoading}
+        />
+      </motion.div>
+
+      {/* Streak Heatmap */}
+      <motion.div variants={shouldAnimate ? cardVariants : {}}>
+        <StreakHeatmap
+          history={streakData?.history ?? []}
+          isLoading={streakLoading}
+        />
       </motion.div>
 
       {/* Screen reader live region for announcements */}

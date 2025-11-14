@@ -28,3 +28,6 @@ export type {
   ServiceWorkerActions,
   UseServiceWorkerOptions,
 } from "./useServiceWorker";
+
+export { useStreakData } from "./useStreakData";
+export type { UseStreakDataReturn } from "./useStreakData";
