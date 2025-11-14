@@ -8,6 +8,7 @@
 import { LEVEL_PROGRESSION } from "./config";
 import { evaluateAchievements } from "./achievementsEngine";
 import { buildLevelUpContext } from "./achievementContext";
+import { gamificationAnalytics } from "./analytics";
 
 /**
  * Level information including XP requirements
@@ -234,6 +235,20 @@ export async function applyLevelChanges(
       totalXp: newXp,
       timestamp: new Date(),
     });
+
+    // Track level-up analytics
+    try {
+      await gamificationAnalytics.trackEvent("level_up", {
+        oldLevel: level - 1,
+        newLevel: level,
+        totalXp: newXp,
+        unlockedThemes: unlockedThemes,
+        gainedXp: gainedXp,
+      }, user._id.toString());
+    } catch (analyticsError) {
+      console.error("❌ Error tracking level-up analytics:", analyticsError);
+      // Don't fail the level-up if analytics fails
+    }
 
     // Trigger achievement evaluation for level-up
     try {

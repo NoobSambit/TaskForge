@@ -8,6 +8,7 @@
 import { gamificationEvents } from "./events";
 import { awardXpForTaskCompletion } from "./awardXp";
 import { ACHIEVEMENTS_CONFIG, getAchievementConfig } from "./achievementsConfig";
+import { gamificationAnalytics } from "./analytics";
 import type {
   Achievement,
   AchievementContext,
@@ -77,6 +78,19 @@ export async function evaluateAchievements(
             achievement: unlockResult,
             timestamp: new Date(),
           });
+
+          // Track achievement unlock analytics
+          try {
+            await gamificationAnalytics.trackEvent("achievement_unlocked", {
+              achievementKey: config.key,
+              achievementTitle: config.title,
+              xpReward: unlockResult.xpReward,
+              triggeredBy: fullContext.eventType,
+            }, context.userId);
+          } catch (analyticsError) {
+            console.error("❌ Error tracking achievement unlock analytics:", analyticsError);
+            // Don't fail the achievement unlock if analytics fails
+          }
 
           console.log(`🎉 Achievement unlocked: ${config.key} - ${config.title} (+${unlockResult.xpRewardAmount} XP)`);
         } else {
