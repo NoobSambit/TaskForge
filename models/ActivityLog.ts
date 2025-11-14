@@ -34,5 +34,49 @@ ActivityLogSchema.index({ userId: 1, taskId: 1, activityType: 1 }, { unique: tru
 
 const ActivityLog = (models.ActivityLog as Model<IActivityLog>) || model<IActivityLog>("ActivityLog", ActivityLogSchema);
 
+/**
+ * Get activity logs for a user with optional filtering
+ */
+export async function getUserActivityLogs(
+  userId: string,
+  options?: {
+    activityType?: string;
+    fromDate?: Date;
+    toDate?: Date;
+    limit?: number;
+    skip?: number;
+  }
+): Promise<IActivityLog[]> {
+  const query: any = { userId };
+
+  if (options?.activityType) {
+    query.activityType = options.activityType;
+  }
+
+  if (options?.fromDate || options?.toDate) {
+    query.date = {};
+    if (options.fromDate) {
+      query.date.$gte = options.fromDate;
+    }
+    if (options.toDate) {
+      query.date.$lte = options.toDate;
+    }
+  }
+
+  let dbQuery = ActivityLog.find(query);
+
+  if (options?.skip) {
+    dbQuery = dbQuery.skip(options.skip);
+  }
+
+  if (options?.limit) {
+    dbQuery = dbQuery.limit(options.limit);
+  }
+
+  dbQuery = dbQuery.sort({ date: -1 });
+
+  return dbQuery.lean();
+}
+
 export { ActivityLog };
 export default ActivityLog;

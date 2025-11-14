@@ -75,6 +75,8 @@ describe("Gamification API Index Route", () => {
         "/api/gamification/activity",
         "/api/gamification/snapshot",
         "/api/gamification/events",
+        "/api/gamification/preferences",
+        "/api/gamification/leaderboard",
       ];
 
       expectedEndpoints.forEach(endpoint => {
