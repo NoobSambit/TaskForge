@@ -8,6 +8,7 @@
 import { updateUserStreak, getCurrentStreak } from "@/models/StreakLog";
 import { updateUserGamification } from "@/models/User";
 import { gamificationEvents } from "./events";
+import { gamificationAnalytics } from "./analytics";
 
 /**
  * Update user's streak and emit appropriate events
@@ -43,6 +44,20 @@ export async function updateUserStreakWithEvents(
       lastStreakDate: new Date(),
       timestamp: new Date(),
     });
+
+    // Track streak analytics
+    try {
+      await gamificationAnalytics.trackEvent("streak_update", {
+        oldStreak: streakResult.previousStreak,
+        newStreak: streakResult.currentStreak,
+        streakExtended: streakResult.streakExtended,
+        streakReset: streakResult.streakReset,
+        taskCount,
+      }, userId);
+    } catch (analyticsError) {
+      console.error("❌ Error tracking streak analytics:", analyticsError);
+      // Don't fail the streak update if analytics fails
+    }
   }
 
   return streakResult;

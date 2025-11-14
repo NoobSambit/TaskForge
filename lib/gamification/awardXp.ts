@@ -11,6 +11,7 @@ import { applyLevelChanges } from "./levels";
 import { evaluateAchievements } from "./achievementsEngine";
 import { buildTaskCompletionContext } from "./achievementContext";
 import { updateUserStreakWithEvents } from "./streaks";
+import { gamificationAnalytics } from "./analytics";
 import type { UserContext, XpCalculationOptions } from "./types";
 
 /**
@@ -306,6 +307,21 @@ export async function awardXpForTaskCompletion(
     }
 
     gamificationEvents.emitXpAwarded(xpAwardedEvent);
+
+    // Track XP award analytics
+    try {
+      await gamificationAnalytics.trackEvent("xp_awarded", {
+        xpDelta: computation.delta,
+        totalXp: updatedUser.xp,
+        taskDifficulty: task?.difficulty,
+        taskPriority: task?.priority,
+        appliedRules: computation.appliedRules,
+        activityType,
+      }, updatedUser._id.toString());
+    } catch (analyticsError) {
+      console.error("❌ Error tracking XP award analytics:", analyticsError);
+      // Don't fail the XP awarding if analytics fails
+    }
 
     // Emit level check pending event for downstream processing
     gamificationEvents.emitLevelCheckPending({
