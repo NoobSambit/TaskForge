@@ -8,3 +8,4 @@ export { GamificationHeader } from "./GamificationHeader";
 export { DashboardHero } from "./DashboardHero";
 export { StreakSummary } from "./StreakSummary";
 export { StreakHeatmap } from "./StreakHeatmap";
+export { ThemeGallery } from "./ThemeGallery";

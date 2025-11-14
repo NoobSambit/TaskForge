@@ -237,3 +237,26 @@ export async function getFutureThemeUnlocks(userId: string): Promise<Array<{leve
 
   return futureUnlocks;
 }
+
+/**
+ * Get all themes with unlock status for a user (for API responses)
+ * 
+ * @param userId - The user ID
+ * @returns Array of themes with isUnlocked and isEquipped properties
+ */
+export async function getAllThemesWithStatus(userId: string): Promise<Array<ThemeDefinition & { isUnlocked: boolean; isEquipped: boolean; requiredLevel: number }>> {
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new Error(`User not found: ${userId}`);
+  }
+
+  const unlockedThemeIds = new Set(user.unlockedThemes || []);
+  const currentTheme = user.theme || 'default';
+  
+  return Object.values(THEMES).map(theme => ({
+    ...theme,
+    isUnlocked: unlockedThemeIds.has(theme.id),
+    isEquipped: theme.id === currentTheme,
+    requiredLevel: theme.levelRequired,
+  }));
+}

@@ -31,3 +31,6 @@ export type {
 
 export { useStreakData } from "./useStreakData";
 export type { UseStreakDataReturn } from "./useStreakData";
+
+export { useTheme } from "./useTheme";
+export type { UseThemeReturn } from "./useTheme";
