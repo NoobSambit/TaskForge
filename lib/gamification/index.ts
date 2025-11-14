@@ -98,6 +98,7 @@ export {
   getUserThemeStatus,
   initializeThemesForUser,
   getFutureThemeUnlocks,
+  getAllThemesWithStatus,
 } from "./themeUnlock";
 
 // Export configuration for reference (read-only)

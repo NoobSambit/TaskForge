@@ -161,6 +161,14 @@ export const ThemesResponseSchema = ApiResponseSchema(z.object({
   equipped: z.string(),
   unlockedCount: z.number().int().min(0),
   totalCount: z.number().int().min(0),
+  futureUnlocks: z.array(z.object({
+    level: z.number().int().min(1),
+    themes: z.array(z.object({
+      id: z.string(),
+      name: z.string(),
+      levelRequired: z.number().int().min(1),
+    })),
+  })).optional(),
 }));
 
 export const ActivityResponseSchema = ApiResponseSchema(z.object({

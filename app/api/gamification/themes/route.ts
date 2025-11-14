@@ -20,7 +20,7 @@ import {
 import { updateUserGamification } from "@/models/User";
 import { 
   getAvailableThemesForUser, 
-  getUserThemeStatus, 
+  getAllThemesWithStatus, 
   getFutureThemeUnlocks 
 } from "@/lib/gamification/themeUnlock";
 import { z } from "zod";
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     const { status } = validatedQuery;
 
     // Get theme information
-    const allThemes = await getUserThemeStatus(userId);
+    const allThemes = await getAllThemesWithStatus(userId);
     const userLevel = user.level || 1;
 
     // Filter themes based on status
